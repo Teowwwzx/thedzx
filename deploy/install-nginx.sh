@@ -14,15 +14,34 @@ cd "$(dirname "$0")/.."
 
 echo "==> preflight"
 ssh "$HOST" 'bash -seuo pipefail' <<'PRE'
-# The config uses $from_cloudflare, which is declared in cf-allow.conf and
-# included by comments.thedzx.site. If that site is ever disabled, nginx
+# This config uses $from_cloudflare, which is declared by a geo block in
+# cf-allow.conf. If whatever includes that file is ever disabled, nginx
 # refuses to START — taking every site on this box down, not just this one.
-if ! grep -rqls 'cf-allow.conf' /etc/nginx/sites-enabled/; then
-  echo "REFUSING: nothing in sites-enabled includes cf-allow.conf, so"
-  echo "\$from_cloudflare would be undefined and nginx would fail to start."
+#
+# Test the LOADED config, not the filesystem. Two earlier predicates were
+# wrong in opposite directions:
+#
+#   grep -r  ... sites-enabled/   — false NEGATIVE. Everything in that
+#     directory is a symlink, and grep -r does not follow symlinks while
+#     recursing. Use -R, or do not grep at all.
+#
+#   grep for the string "cf-allow.conf" — false POSITIVE. Five site files
+#     merely mention it in a comment, and this config is about to become a
+#     sixth, so the check would eventually pass by matching itself.
+#
+# `nginx -T` dumps the fully assembled config, so the geo block either is
+# there or it is not. That is the thing that actually has to be true.
+if ! nginx -T 2>/dev/null | grep -qE 'geo[[:space:]].*\$from_cloudflare'; then
+  echo "REFUSING: \$from_cloudflare is not declared in the assembled config."
+  echo "Something must 'include /etc/nginx/cf-allow.conf;' before nginx will start."
   exit 1
 fi
-grep -rls 'cf-allow.conf' /etc/nginx/sites-enabled/ | sed 's/^/    declared by: /'
+
+echo "    \$from_cloudflare is declared. Provided by:"
+grep -RHn '^[[:space:]]*include[[:space:]].*cf-allow\.conf' /etc/nginx/sites-enabled/ \
+  | sed 's/^/      /'
+echo "    (disabling that site breaks every site that uses the variable)"
+
 test -f /etc/nginx/ssl/thedzx-origin.pem || { echo "REFUSING: origin cert missing"; exit 1; }
 mkdir -p /var/www/thedzx.site
 PRE
