@@ -1,4 +1,18 @@
 /* ------------------------------------------------------------------
+   NOTE ON MIME TYPES AND nosniff
+   ------------------------------------------------------------------
+   The server sends X-Content-Type-Options: nosniff. That means a browser
+   will REFUSE to apply this stylesheet unless it arrives as text/css — it
+   will not guess from the .css extension.
+
+   A server-level `types { }` block in the nginx config once wiped the whole
+   MIME table, so this file was served as application/octet-stream and every
+   page rendered completely unstyled while looking fine in curl. If the site
+   ever loses its styling again, check Content-Type before anything else:
+
+       curl -sI https://thedzx.site/_astro/*.css | grep -i content-type
+
+   ------------------------------------------------------------------
    Design tokens.
 
    Light is the base. Dark is declared twice on purpose: once behind
