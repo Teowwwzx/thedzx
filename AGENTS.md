@@ -2,6 +2,13 @@
 
 Rules for any AI agent (or human) working in this repo. Read before editing.
 
+## Deployment target
+
+Self-hosted: `do-ghost-dev` droplet, nginx 1.24, static files under
+`/var/www/thedzx.site/`, behind Cloudflare's proxy with an origin cert.
+NOT Cloudflare Workers/Pages — there is no wrangler in this repo, and
+`_headers` / `_redirects` files do nothing here.
+
 ## What this project is
 
 A personal blog that doubles as an explorable 3D world. **It is a blog with a
@@ -22,7 +29,6 @@ and there should not be until the room has posts behind it.
 | `astro-og-canvas` | 0.13.1 | |
 | `@astrojs/check` | 0.9.10 | Peers `typescript ^5 \|\| ^6` — TypeScript 7 does NOT satisfy it |
 | `typescript` | 5.9.3 | Held below 7 by the line above |
-| `wrangler` | 4.128.0 | A local dep on purpose, so `npm run deploy` works on a clean checkout |
 | `react` / `react-dom` | **must stay `>=19 <19.3`** when added | React Three Fiber 9.7's peer ceiling. React 19.3 will break the tree. |
 | `three` | 0.185.1 when added | |
 | `@react-three/fiber` | 9.7.0 when added | |
@@ -47,9 +53,9 @@ deliberately and re-run `npm run build && npm run budget`.
    hole is the most commonly reported killer of projects like this.
 6. **No new zone** until the current one has five published posts. `ZONES` in
    `src/consts.ts` is closed — six entries, never a seventh.
-7. **Never ship an API key to the browser.** Market data goes through a
-   separate Worker on a real hostname (`caches.default` is a no-op on
-   `*.workers.dev` because the Cache API is zone-level).
+7. **Never ship an API key to the browser.** Market data goes through a small
+   server-side proxy on the droplet (its own nginx location + a container),
+   never a fetch from the page with a key in it.
 8. **Every third-party asset gets a `assets/manifest.json` entry the day it is
    downloaded.** `/credits/` is generated from it.
 
@@ -98,5 +104,9 @@ npm run deploy    # build + wrangler deploy
   background while `color` does not beat its inline colour, which renders light
   tokens on a dark plate at 1.1:1.
 - Response headers set in a prerendered endpoint (`world.json.ts`) are silently
-  discarded by `output: 'static'`. They work in `astro dev`. Put caching in
-  `public/_headers`.
+  discarded by `output: 'static'`. They work in `astro dev`. Caching lives in
+  `deploy/nginx-thedzx.site.conf`.
+- nginx on the droplet is **1.24**, so http2 goes on the `listen` line;
+  `http2 on;` is a 1.25.1+ directive and fails `nginx -t` there.
+- The apex block previously sent `X-Robots-Tag: noindex, nofollow`. It is gone
+  on purpose. Do not reinstate it — subdomains keep their own noindex.

@@ -36,16 +36,24 @@ npm run build && npm run budget
      delete the HTML comment at the top, then set `draft: false`.
    - The other two are skeletons. Replace the body **and** the frontmatter
      title/description, then flip the flag.
-4. **Bind your domain**, then deploy. Uncomment the `routes` / `workers_dev`
-   lines in `wrangler.jsonc` first — otherwise this publishes to
-   `*.workers.dev` while every canonical URL claims your real domain.
+4. **Install the nginx block, once.** The apex currently returns a deliberate
+   404 with `X-Robots-Tag: noindex, nofollow`. That header must go, or none of
+   the static-HTML-first architecture matters.
    ```bash
-   npx wrangler login
+   scp deploy/nginx-thedzx.site.conf do-ghost-dev:/etc/nginx/sites-available/thedzx.site
+   ssh do-ghost-dev 'nginx -t && systemctl reload nginx'
+   ```
+   Back up the existing file first — it also carries the `/cv` redirect and the
+   Cloudflare-only guard, both of which the new block preserves.
+5. **Deploy.**
+   ```bash
    npm run deploy
    ```
-   `npm run deploy` builds first. Never run `wrangler deploy` on its own —
-   `dist/` is gitignored, so on a fresh clone there is nothing to upload, and
-   on a stale tree you ship yesterday's HTML.
+   Builds, runs the budget gate, rsyncs to a timestamped release directory on
+   the droplet, then flips `current` symlink atomically. Keeps the last 5
+   releases, so a rollback is one `ln -sfn` away. Never upload `dist/` by hand:
+   it is gitignored, so a fresh clone has nothing to upload and a stale tree
+   ships yesterday's HTML.
 5. **Verify Google can read it.** Register the domain in Search Console, then
    use **URL Inspection → View Tested Page** on a post and confirm with your own
    eyes that the article text is in the HTML. This is the single check that
@@ -74,9 +82,10 @@ src/
 assets/
   manifest.json          Every third-party asset, logged on download day
   CREDITS.md             The rule, and the known licence traps
-public/
-  _headers               Cache-Control for the static host. Without it every
-                         asset is served max-age=0.
+deploy/
+  nginx-thedzx.site.conf The apex server block. Cache headers, try_files for
+                         Astro's directory URLs, /cv redirect kept.
+  deploy.sh              Atomic release: rsync to releases/<ts>, flip symlink.
 scripts/
   check-budgets.mjs      Asset budget gate — FAILS the build if an article
                          route ships executable JS. Wired now, matters at stage 2.
@@ -91,7 +100,15 @@ AGENTS.md                Rules, pins, invariants.
 - No new location until the current one has five published posts behind it.
 - No engine commits in a week where no post shipped.
 
-## Stage 1 (not started)
+## Hosting
+
+Self-hosted on the `do-ghost-dev` droplet (Ubuntu 24.04, nginx 1.24), behind
+Cloudflare's proxy. TLS at the origin uses the existing Cloudflare Origin
+certificate at `/etc/nginx/ssl/thedzx-origin.pem`; nginx rejects anything that
+did not come through Cloudflare. Because Cloudflare caches in front, purge it
+after a deploy if HTML looks stale.
+
+## Stage 1 (in progress)
 
 One room, fixed camera, three hotspots, a visibly locked door. Flat-shaded
 low-poly from CC0 kits. Download the Kenney Furniture Kit, City Kit (Roads),
