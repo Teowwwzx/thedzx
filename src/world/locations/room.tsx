@@ -135,7 +135,7 @@ export const room: LocationSpec = {
     { to: 'city', label: 'Outside', position: [3.05, 1.0, 0.75], arriveAt: [-7.5, 0] },
     { to: 'server', label: 'Down the hatch', position: [-2.3, 0.4, 1.5], arriveAt: [0, 2.6] },
   ],
-  frameWidth: 8.2,
+  frameWidth: 6.9,
   ambience: '#10141b',
   Scenery,
 };

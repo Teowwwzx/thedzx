@@ -6,7 +6,7 @@ import type { Post } from '../lib/posts';
 
 interface Props { post: Post; }
 const { post } = Astro.props;
-const { title, description, pubDate, updatedDate, zone, prop, tags, draft } = post.data;
+const { title, description, pubDate, updatedDate, zone, prop, tags, draft, placeholder } = post.data;
 const z = ZONES[zone as ZoneId];
 
 const url = new URL(`/blog/${post.id}/`, Astro.site).toString();
@@ -46,7 +46,8 @@ const jsonLd = [
   description={description}
   type="article"
   image={`/og/blog/${post.id}.png`}
-  jsonLd={jsonLd}
+  jsonLd={placeholder ? [] : jsonLd}
+  noindex={placeholder}
 >
   <article class="prose">
     <header style="margin-bottom:36px">

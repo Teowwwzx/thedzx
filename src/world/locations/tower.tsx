@@ -138,7 +138,7 @@ export const tower: LocationSpec = {
     { prop: 'window-118', label: 'Level 118 · micro', position: [0, 1.5, 2.6] },
   ],
   doors: [{ to: 'city', label: 'Down to the street', position: [0, 1.05, 4], arriveAt: [11, -3] }],
-  frameWidth: 9.5,
+  frameWidth: 8.4,
   ambience: '#0c1017',
   Scenery,
 };

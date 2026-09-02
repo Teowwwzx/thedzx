@@ -1,10 +1,10 @@
 import rss from '@astrojs/rss';
 import type { APIRoute } from 'astro';
 import { SITE, ZONES, type ZoneId } from '../consts';
-import { allPosts } from '../lib/posts';
+import { realPosts } from '../lib/posts';
 
 export const GET: APIRoute = async (context) => {
-  const posts = await allPosts();
+  const posts = await realPosts();
   return rss({
     title: SITE.title,
     description: SITE.description,

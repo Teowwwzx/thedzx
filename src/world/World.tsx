@@ -167,15 +167,20 @@ function Marker({
         </mesh>
       </group>
       <Html center distanceFactor={7} zIndexRange={[20, 0]}>
+        {/* The label is not signage. It appears when you are close enough to
+            act on it and is otherwise gone, so the world explains itself by
+            being walked through rather than by being annotated. It stays a
+            real <button> at all times — a screen reader and a keyboard get
+            it whether or not it is painted. */}
         <button
           type="button"
-          className={`hotspot-label${active ? ' is-active' : ''}${near ? ' is-near' : ''}`}
+          className={`hotspot-label${active ? ' is-active' : ''}${near ? ' is-near' : ' is-far'}`}
           data-prop={dataProp}
           aria-expanded={active}
           onClick={onOpen}
         >
           {label}
-          {count !== null && <span className="hotspot-count">{count}</span>}
+          {count ? <span className="hotspot-count">{count}</span> : null}
         </button>
       </Html>
     </group>
@@ -427,20 +432,14 @@ export function World({ data }: { data: WorldData }) {
         />
       </Canvas>
 
-      <div className="world-hud">
-        <span className="world-hud-where">{data.zones.find((z) => z.id === here)?.label ?? here}</span>
-      </div>
-      <span className="world-hud-hint">Tap the floor to walk · WASD on a keyboard</span>
-
       {fading && <div className="world-fade" />}
 
-      {!ready && (
+      {!ready && stalled && (
         <div className="world-loading">
-          {stalled ? (
-            <p>Taking longer than it should. Everything is on <a href="/">the map</a>.</p>
-          ) : (
-            <span>Building the world…</span>
-          )}
+          <p>
+            This is taking longer than it should. The writing is all on{' '}
+            <a href="/room/">ordinary pages</a>.
+          </p>
         </div>
       )}
 

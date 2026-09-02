@@ -139,7 +139,7 @@ export const city: LocationSpec = {
     { to: 'gym', label: 'The Gym', position: [-2, 1.05, 5.6], arriveAt: [0, 3.2] },
     { to: 'tower', label: 'Merdeka 118', position: [11.3, 1.15, -3], arriveAt: [0, 3.0] },
   ],
-  frameWidth: 17,
+  frameWidth: 15,
   ambience: '#0d1119',
   Scenery,
 };

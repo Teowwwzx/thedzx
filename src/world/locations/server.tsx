@@ -95,7 +95,7 @@ export const server: LocationSpec = {
   ],
   hotspots: [{ prop: 'rack', label: 'The racks', position: [0.2, 2.35, -2.2] }],
   doors: [{ to: 'room', label: 'Back up the hatch', position: [0, 1.0, 3.5], arriveAt: [0.5, 1.6] }],
-  frameWidth: 10,
+  frameWidth: 9,
   ambience: '#0a0d12',
   Scenery,
 };

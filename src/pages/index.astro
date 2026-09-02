@@ -1,70 +1,207 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import PostList from '../components/PostList.astro';
+import BaseHead from '../components/BaseHead.astro';
 import { SITE, ZONES, ZONE_ORDER } from '../consts';
-import { allPosts } from '../lib/posts';
+import { allPosts, postUrl } from '../lib/posts';
 
+/**
+ * The entry. There is no landing page — arriving IS the game.
+ *
+ * No hero, no nav, no blurbs, no "enter" button, no explanation of what the
+ * gym or the tower are for. You land in the room and you walk. Everything the
+ * world has to say, it says by being a place.
+ *
+ * The one concession: a canvas has no text and no links, so search engines
+ * and screen readers would see an empty document. The <noscript> block and
+ * the visually-hidden index below give them the real pages — /room/, /blog/…
+ * — which still exist and are still where the writing lives. That markup is
+ * a true description of the site, not keyword stuffing: it names the same
+ * places the world contains and links where the world links.
+ */
 const posts = await allPosts();
-const counts = Object.fromEntries(
-  ZONE_ORDER.map((id) => [id, posts.filter((p) => p.data.zone === id).length]),
-);
-
-const jsonLd = [
-  {
-    '@context': 'https://schema.org',
-    '@type': 'WebSite',
-    name: SITE.title,
-    url: SITE.url,
-    description: SITE.description,
-    inLanguage: SITE.locale,
-    author: { '@type': 'Person', name: SITE.author, url: SITE.url },
-  },
-];
 ---
 
-<BaseLayout title={SITE.title} description={SITE.description} jsonLd={jsonLd} wide>
-  <section style="padding-block: 32px 8px; max-width: 62ch;">
-    <p class="label" style="margin:0 0 16px">{SITE.tagline}</p>
-    <h1 style="font-size:clamp(32px,6vw,48px);margin-bottom:18px">
-      Notes from inside the machine.
-    </h1>
-    <p style="color:var(--ink-2);font-size:19px;margin:0 0 26px">
-      {SITE.description}
-    </p>
-    <p style="margin:0">
-      <a class="chip" href="/world/">Walk the world →</a>
-    </p>
-  </section>
-
-  <section style="margin-top:56px">
-    <h2 class="label" style="margin-bottom:16px">The map</h2>
-    <ul class="zone-grid">
-      {
-        ZONE_ORDER.map((id) => {
-          const z = ZONES[id];
-          const n = counts[id] ?? 0;
-          return (
-            <li>
-              <a class="zone-card" href={`/${id}/`}>
-                <span class="rail">
-                  <span class="elev">{z.elevation}</span>
-                  <span>Stage {z.stage}</span>
-                </span>
-                <h3>{z.label}</h3>
-                <p>{z.blurb}</p>
-                <span class="count tabular">
-                  {n === 0 ? 'No posts yet' : n === 1 ? '1 post' : `${n} posts`}
-                </span>
-              </a>
-            </li>
-          );
-        })
+<!doctype html>
+<html lang={SITE.locale} class="no-js">
+  <head>
+    <BaseHead
+      title={SITE.title}
+      description={SITE.description}
+      image="/og/home.png"
+      jsonLd={[
+        {
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: SITE.title,
+          url: SITE.url,
+          description: SITE.description,
+          inLanguage: SITE.locale,
+          author: { '@type': 'Person', name: SITE.author, url: SITE.url },
+        },
+      ]}
+    />
+    <!--
+      is:global is required, not stylistic. Astro scopes a component's <style>
+      with a data attribute, and .world-stage is created by React at runtime —
+      so a scoped `#world-root .world-stage` never matches it and the stage
+      keeps its default clamp() height instead of filling the viewport.
+    -->
+    <style is:global>
+      /* The world owns the viewport. Nothing else is on this page. */
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        background: #10141b;
       }
-    </ul>
-  </section>
 
-  <section style="margin-top:64px">
-    <h2 class="label" style="margin-bottom:8px">Everything, newest first</h2>
-    <PostList posts={posts} headingLevel={3} />
-  </section>
-</BaseLayout>
+      #world-root {
+        position: fixed;
+        inset: 0;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+      }
+
+      #world-root .world-stage {
+        height: 100%;
+      }
+
+      /* Real markup, off-screen: for crawlers, screen readers and no-JS.
+         Not display:none — that would hide it from assistive tech too. */
+      .index-fallback {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      /* …but a visitor with no JavaScript gets it back, full size, because
+         for them it is the whole site rather than a fallback. */
+      .no-js .index-fallback {
+        position: static;
+        width: auto;
+        height: auto;
+        margin: 0;
+        overflow: visible;
+        clip-path: none;
+        white-space: normal;
+        padding: 40px 24px;
+        max-width: 68ch;
+      }
+
+      .no-js,
+      .no-js body {
+        height: auto;
+        overflow: auto;
+      }
+
+      /* With no JS there is no world to show, so the mount point and the
+         boot indicator must not sit on top of the text. */
+      .no-js #world-root,
+      .no-js .boot { display: none !important; }
+
+      .boot {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: #10141b;
+        color: #838ea1;
+        font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        z-index: 5;
+        transition: opacity 400ms ease;
+      }
+
+      .boot[hidden] { display: none !important; }
+      .boot.is-gone { opacity: 0; pointer-events: none; }
+    </style>
+    <script is:inline>
+      // Set before paint so the no-JS layout never flashes for anyone else.
+      document.documentElement.classList.remove('no-js');
+    </script>
+  </head>
+
+  <body>
+    <div id="world-root"></div>
+
+    <div class="boot" id="boot"><span>▮</span></div>
+
+    <div class="index-fallback">
+      <h1>{SITE.title}</h1>
+      <p>{SITE.description}</p>
+      <p>
+        This page is a 3D world and needs WebGL. The writing itself lives on
+        ordinary pages:
+      </p>
+      <ul>
+        {
+          ZONE_ORDER.map((id) => (
+            <li>
+              <a href={`/${id}/`}>{ZONES[id].label}</a> — {ZONES[id].blurb}
+            </li>
+          ))
+        }
+      </ul>
+      {
+        posts.length > 0 && (
+          <ul>
+            {posts.map((post) => (
+              <li>
+                <a href={postUrl(post)}>{post.data.title}</a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+      <p>
+        <a href="/rss.xml">Feed</a> · <a href="/credits/">Credits</a>
+      </p>
+    </div>
+
+    <script>
+      // No button. Arriving is the game, so the world loads itself.
+      const root = document.getElementById('world-root');
+      const boot = document.getElementById('boot');
+
+      function unsupported(): boolean {
+        try {
+          const gl = document.createElement('canvas').getContext('webgl2');
+          if (!gl) return true;
+          gl.getExtension('WEBGL_lose_context')?.loseContext();
+        } catch {
+          return true;
+        }
+        return false;
+      }
+
+      async function start() {
+        if (!root) return;
+        if (unsupported()) {
+          // No WebGL: the off-screen index becomes the page.
+          document.documentElement.classList.add('no-js');
+          boot?.setAttribute('hidden', '');
+          return;
+        }
+        try {
+          const { mount } = await import('../world/mount');
+          await mount(root);
+          boot?.classList.add('is-gone');
+          window.setTimeout(() => boot?.setAttribute('hidden', ''), 450);
+        } catch (err) {
+          console.error('[world] failed to load', err);
+          document.documentElement.classList.add('no-js');
+          boot?.setAttribute('hidden', '');
+        }
+      }
+
+      start();
+    </script>
+  </body>
+</html>

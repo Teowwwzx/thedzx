@@ -450,8 +450,9 @@ a.chip:hover { background: var(--accent-ink); color: var(--bg); }
 
 /* ==================================================================
    The world (stage 1).
-   Loaded on /world/ only. The canvas never contains text — every label
-   here is real DOM rendered over it by drei's <Html>.
+   The canvas never contains text — every label here is real DOM rendered
+   over it by drei's <Html>, so it stays readable, selectable and reachable
+   by a screen reader.
    ================================================================== */
 
 .world-intro {
@@ -785,9 +786,32 @@ a.chip:hover { background: var(--accent-ink); color: var(--bg); }
   to { opacity: 1; }
 }
 
+.hotspot-label {
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+/* Out of reach: gone. The ring on the floor is the only hint, which is the
+   point — the world is explored, not annotated. */
+.hotspot-label.is-far {
+  opacity: 0;
+  transform: translateY(-2px) scale(0.9);
+  pointer-events: none;
+}
+
 .hotspot-label.is-near {
   border-color: #de8b4c;
   box-shadow: 0 0 0 2px rgba(222, 139, 76, 0.28);
+}
+
+/* …but a keyboard user has no "near", so focus always reveals it. */
+.hotspot-label:focus-visible {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hotspot-label { transition: none; }
 }
 
 /* the TV's focused state */

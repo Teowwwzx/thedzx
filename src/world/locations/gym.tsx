@@ -110,7 +110,7 @@ export const gym: LocationSpec = {
     { prop: 'treadmill', label: 'Treadmill', position: [-3.4, 1.75, 2.4] },
   ],
   doors: [{ to: 'city', label: 'Outside', position: [0, 1.05, 4.5], arriveAt: [-2, 3.6] }],
-  frameWidth: 11,
+  frameWidth: 9.5,
   ambience: '#12161d',
   Scenery,
 };

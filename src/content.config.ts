@@ -27,6 +27,13 @@ const blog = defineCollection({
 
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
+
+    /**
+     * Scaffolding, not writing. Placeholder posts populate the world so it
+     * does not read as empty, but they carry noindex and stay out of the
+     * sitemap and the feed — nothing fake gets indexed under a real byline.
+     */
+    placeholder: z.boolean().default(false),
   }),
 });
 

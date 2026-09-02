@@ -24,7 +24,10 @@ export default defineConfig({
   integrations: [
     mdx(),
     // OG cards are images, not pages — keep them out of the sitemap.
-    sitemap({ filter: (page) => !page.includes('/og/') }),
+    sitemap({
+      // Placeholder scaffolding and OG images are not pages anyone should find.
+      filter: (page) => !page.includes('/og/') && !page.includes('/blog/ph-'),
+    }),
   ],
 
   vite: {

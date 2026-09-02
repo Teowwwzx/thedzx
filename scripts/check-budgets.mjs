@@ -70,9 +70,11 @@ for (const f of files) {
 }
 
 // ---- the world bundle ----------------------------------------------------
-const worldEntry = files.find(
-  (f) => /world\/index\.html$/.test(f) || f.endsWith(join('world', 'index.html')),
-);
+// The entry IS the homepage now: arriving loads the world. If this ever
+// stops matching, the two checks below silently stop running — which is how
+// the article-JS gate once passed while checking nothing.
+const worldEntry = files.find((f) => f === join(DIST, 'index.html'));
+if (!worldEntry) failures.push('dist/index.html not found — the world-entry budget checked nothing.');
 let worldGzip = 0;
 let entryJs = 0;
 
@@ -89,7 +91,7 @@ if (worldEntry) {
   }
   if (entryJs > BUDGETS.worldEntryJs) {
     failures.push(
-      `/world/ ships ${fmt(entryJs)} of JS before the click, budget ${fmt(BUDGETS.worldEntryJs)}. ` +
+      `/ ships ${fmt(entryJs)} of JS up front, budget ${fmt(BUDGETS.worldEntryJs)}. ` +
         'The 3D bundle must stay behind the dynamic import.',
     );
   }
@@ -170,7 +172,7 @@ console.log(`\n  Budget check — ${files.length} files in ${DIST}/`);
 console.log(`  3D assets:        ${fmt(total3d)} / ${fmt(BUDGETS.firstPaint3d)}`);
 console.log(`  Article routes:   ${articles.length} checked, 0 allowed to ship JS`);
 if (worldEntry) {
-  console.log(`  /world/ entry JS: ${fmt(entryJs)} / ${fmt(BUDGETS.worldEntryJs)}`);
+  console.log(`  Entry JS:         ${fmt(entryJs)} / ${fmt(BUDGETS.worldEntryJs)}`);
   console.log(`  World bundle:     ${fmt(worldGzip)} gzip / ${fmt(BUDGETS.worldBundleGzip)}`);
 }
 

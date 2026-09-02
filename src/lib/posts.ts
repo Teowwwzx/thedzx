@@ -21,3 +21,8 @@ export async function postsInZone(zone: string): Promise<Post[]> {
 export function postUrl(post: Post): string {
   return `/blog/${post.id}/`;
 }
+
+/** Real writing only — what belongs in the sitemap and the feed. */
+export async function realPosts(): Promise<Post[]> {
+  return (await allPosts()).filter((p) => !p.data.placeholder);
+}
