@@ -23,6 +23,22 @@
    ------------------------------------------------------------------ */
 
 :root {
+  /* ------------------------------------------------------------------
+     Cache-bust marker. Bump ONLY to mint a new asset URL.
+
+     This file's public URL is derived from a hash of its contents, so any
+     real change gives it a new name. A misconfigured origin once served it
+     as application/octet-stream; browsers and Cloudflare both stored that,
+     and `immutable, max-age=31536000` meant neither would ever revalidate.
+     A 304 carries no Content-Type, so every cached client kept reusing the
+     broken one and rendered the site unstyled — permanently.
+
+     Comments do not work for this: minification strips them and the hash
+     stays identical. A custom property survives, because it is readable at
+     runtime. Hence a declaration rather than a note.
+     ------------------------------------------------------------------ */
+  --asset-generation: 2;
+
   --bg:        #e9ebef;
   --surface:   #f6f7f9;
   --surface-2: #dfe3e9;
