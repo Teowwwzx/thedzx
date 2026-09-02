@@ -27,6 +27,30 @@ export default defineConfig({
     sitemap({ filter: (page) => !page.includes('/og/') }),
   ],
 
+  vite: {
+    resolve: {
+      // The world bundle is loaded by a dynamic import() from a plain script
+      // rather than by an Astro island, so nothing else forces a single copy
+      // of these. Without dedupe, Vite's dev pre-bundling hands R3F a second
+      // React instance and every hook call throws "Invalid hook call".
+      // three needs it too — two copies produce silent instanceof failures.
+      dedupe: ['react', 'react-dom', 'three'],
+    },
+    optimizeDeps: {
+      // Pre-bundle these up front so dev does not re-optimize mid-import and
+      // serve a 504 "Outdated Optimize Dep" for a chunk already in flight.
+      include: [
+        'react',
+        'react-dom',
+        'react-dom/client',
+        'react/jsx-runtime',
+        'three',
+        '@react-three/fiber',
+        '@react-three/drei',
+      ],
+    },
+  },
+
   markdown: {
     // NOTE: Astro 7 defaults to Sätteri (its Rust markdown pipeline), not
     // unified/remark. If you ever add a remark or rehype plugin you will need

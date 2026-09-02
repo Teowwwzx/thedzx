@@ -40,9 +40,20 @@ const jsonLd = [
     </p>
     <h1 style="font-size:clamp(30px,5.5vw,42px);margin-bottom:16px">{z.label}</h1>
     <p style="color:var(--ink-2);font-size:19px;margin:0 0 20px">{z.blurb}</p>
-    <p class="label" style="margin:0">
+    <p class="label" style="margin:0 0 22px">
       Props here: {z.props.join(' · ')}
     </p>
+
+    {
+      /* Only the room has been built in 3D so far. The link appears when a
+         zone's world exists, never before — a dead "coming soon" link is
+         worse than no link. */
+      zone === 'room' && (
+        <p style="margin:0">
+          <a class="chip" href="/world/">Walk into this room →</a>
+        </p>
+      )
+    }
   </section>
 
   <section style="margin-top:44px">

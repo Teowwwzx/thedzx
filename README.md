@@ -108,8 +108,24 @@ certificate at `/etc/nginx/ssl/thedzx-origin.pem`; nginx rejects anything that
 did not come through Cloudflare. Because Cloudflare caches in front, purge it
 after a deploy if HTML looks stale.
 
-## Stage 1 (in progress)
+## Stage 1 — the room (greybox, shipped)
 
-One room, fixed camera, three hotspots, a visibly locked door. Flat-shaded
-low-poly from CC0 kits. Download the Kenney Furniture Kit, City Kit (Roads),
-Development Essentials and two Poly Haven HDRIs *before* writing any three.js.
+`/world/` is a fixed-camera room with four hotspots: desk, bookshelf, TV, and a
+visibly locked door. Click one and a panel lists that prop's posts as real
+links into the blog.
+
+**It contains no 3D assets.** Every object is a box, plane or cylinder with a
+flat colour, generated in `src/world/Room.tsx`. Nothing is downloaded, so there
+is no asset budget to blow and no Blender step to get stuck in. This is the
+plan's advice taken literally: wire the routing against grey boxes first.
+
+The 3D bundle (~230 KB gzip) loads on click, never on page load. `/world/`
+itself ships about 1.2 KB of JS.
+
+### Next, in order
+
+1. **Write posts.** The door stays locked until this room has five.
+2. Swap greyboxes for real models — Kenney Furniture Kit (CC0) first. Only
+   `Room.tsx` geometry changes; hotspots, panel and gate are asset-independent.
+   Log every download in `assets/manifest.json` on the day you get it.
+3. Stage 2 makes it walkable.

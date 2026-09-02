@@ -6,12 +6,23 @@ zones below are the whole world.
 
 | Zone | Stage | 3D status | Posts needed | Posts live | Drafts |
 |---|---|---|---|---|---|
-| The Room | 1 | Not started | 5 | 0 | 1 |
+| The Room | 1 | **Greybox at `/world/`** | 5 | 0 | 1 |
 | The TV | 3 | Not started | — (live data, not posts) | — | — |
 | Outside | 4 | Not started | 5 | 0 | 0 |
 | The Gym | 4 | Not started | 5 | 0 | 1 |
 | Merdeka 118 | 5 | Not started | 5 | 0 | 1 |
 | The Server Room | 6 | Not started | 5 | 0 | 0 |
+
+## Stage 1 status — greybox
+
+The room exists at `/world/`, built entirely from primitives: no models, no
+textures, no downloads. That is the plan working as intended — routing and
+interaction are wired against grey boxes *before* any asset is sourced, so the
+art bottleneck cannot stall the project.
+
+Swapping greyboxes for CC0 kits changes `src/world/Room.tsx` geometry and
+nothing else. The hotspots, the panel, the device gate and the crawlable HUD
+are all asset-independent.
 
 **Posts live is 0 across the board.** The three files in `src/content/blog/`
 are all `draft: true` — one AI-written build log you need to make your own, and

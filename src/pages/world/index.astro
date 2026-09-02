@@ -1,0 +1,124 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { ZONES } from '../../consts';
+import { postsInZone, postUrl } from '../../lib/posts';
+
+/**
+ * The 3D room.
+ *
+ * This page is a normal, fully server-rendered HTML page. The world is not
+ * loaded until the visitor clicks Enter — so the canvas can never be the LCP
+ * element (AGENTS.md rule 3), and everything the room contains is reachable
+ * as real markup below whether or not any JavaScript runs (rule 2).
+ */
+const zone = ZONES.room;
+const posts = await postsInZone('room');
+
+const onDesk = posts.filter((p) => p.data.prop === 'monitor').length;
+const onShelf = posts.filter((p) => p.data.prop === 'bookshelf').length;
+
+const description =
+  'Step into the room: a desk of IT writing, a bookshelf of essays, a TV showing the markets, and a door that is not open yet.';
+---
+
+<BaseLayout title="The Room" description={description} image="/og/zone/room.png" wide>
+  <section class="world-intro">
+    <p class="label">{zone.elevation} · Stage 1 · Greybox</p>
+    <h1>The Room</h1>
+    <p class="world-lede">{description}</p>
+
+    <button type="button" id="world-enter" class="world-enter">
+      <span class="world-enter-main">Enter the room</span>
+      <span class="world-enter-sub">WebGL · loads on click, not on page load</span>
+    </button>
+
+    <noscript>
+      <p class="note">
+        The room needs JavaScript. Everything in it is listed below, which is
+        rather the point — the world is a second way in, never the only one.
+      </p>
+    </noscript>
+  </section>
+
+  <!-- Mount point. Stays empty and hidden until Enter is clicked. -->
+  <div id="world-root" class="world-root" hidden></div>
+
+  <!--
+    The HUD, as real markup. Every hotspot in the 3D room has a matching
+    <a href> here. Raycast clicks generate zero crawlable links, so this
+    section is what Google and a screen reader actually see. Do not delete it.
+  -->
+  <section class="world-index">
+    <h2 class="label">What's in here</h2>
+    <ul class="world-index-list">
+      <li>
+        <strong>The desk</strong> — IT knowledge, build logs, code.
+        <a href="/room/">{onDesk === 1 ? '1 post' : `${onDesk} posts`} on the desk</a>
+      </li>
+      <li>
+        <strong>The bookshelf</strong> — longer essays, one spine each.
+        <a href="/room/">{onShelf === 1 ? '1 essay' : `${onShelf} essays`} on the shelf</a>
+      </li>
+      <li>
+        <strong>The TV</strong> — markets rather than posts. <a href="/tv/">Wired up in stage 3</a>.
+      </li>
+      <li>
+        <strong>The door</strong> — locked. Outside, the gym and Merdeka 118 come
+        after this room has five published posts behind it.
+      </li>
+    </ul>
+
+    {
+      posts.length > 0 && (
+        <ul class="post-list" style="margin-top:28px">
+          {posts.map((post) => (
+            <li>
+              <a class="post-item" href={postUrl(post)}>
+                <p class="post-item-meta">
+                  <span class="chip ghost">{post.data.prop}</span>
+                </p>
+                <h3 class="post-item-title">{post.data.title}</h3>
+                <p class="post-item-desc">{post.data.description}</p>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </section>
+</BaseLayout>
+
+<script>
+  // Click-to-load. Nothing from the world bundle — React, three.js, R3F, drei —
+  // is fetched until this handler runs, so the page's own JS footprint is
+  // this listener and nothing more.
+  const btn = document.getElementById('world-enter') as HTMLButtonElement | null;
+  const root = document.getElementById('world-root');
+
+  btn?.addEventListener('click', async () => {
+    if (!root) return;
+    btn.disabled = true;
+    btn.classList.add('is-loading');
+    const main = btn.querySelector('.world-enter-main');
+    if (main) main.textContent = 'Loading the room…';
+
+    try {
+      const { mount } = await import('../../world/mount');
+      root.hidden = false;
+      await mount(root);
+      btn.hidden = true;
+      root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) {
+      console.error('[world] failed to load', err);
+      btn.disabled = false;
+      btn.classList.remove('is-loading');
+      if (main) main.textContent = 'Enter the room';
+      root.hidden = true;
+      const p = document.createElement('p');
+      p.className = 'note';
+      p.textContent =
+        'The room failed to load. Everything in it is listed below, so nothing is lost.';
+      btn.after(p);
+    }
+  });
+</script>

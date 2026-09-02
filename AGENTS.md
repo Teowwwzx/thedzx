@@ -15,8 +15,8 @@ A personal blog that doubles as an explorable 3D world. **It is a blog with a
 3D navigation skin, not a 3D world containing text.** Every decision follows
 from that. See `LOCATIONS.md` for scope and the roadmap stages.
 
-Currently at **stage 0**: the blog only. There is no three.js in this repo yet,
-and there should not be until the room has posts behind it.
+Currently at **stage 1**: the blog, plus a greybox room at `/world/`.
+The room is built from primitives — no models, no textures, nothing fetched.
 
 ## Pinned versions — do not upgrade in passing
 
@@ -85,6 +85,25 @@ gate, dispose/instancing refactors, the Worker proxy.
 
 **Do not delegate:** room layout and composition, colour and lighting mood,
 camera positions and easing, what feels fun — and all of the writing.
+
+## The world (src/world/)
+
+- `/world/` is a normal server-rendered page. The 3D bundle is behind a
+  **dynamic `import()` fired by a click**, so the page itself ships ~1.2 KB of
+  JS and the canvas can never be the LCP element.
+- React is a **library** here, not an Astro renderer. `@astrojs/react` is
+  deliberately NOT installed — it injects a Fast Refresh preamble that a
+  plain dynamic import cannot satisfy, which breaks dev. JSX compiles from
+  `tsconfig.json`'s `jsx: react-jsx`.
+- `vite.resolve.dedupe` for `react`, `react-dom` and `three` is load-bearing.
+  Without it, dev pre-bundling hands R3F a second React and every hook throws.
+- Hotspot labels are drei `<Html>`, i.e. real DOM. Not `transform` mode, which
+  is documented to render blurry. The canvas draws no text at all.
+- The section under the canvas mirrors every hotspot as a real `<a href>`.
+  It is not decoration — it is the only thing a crawler or screen reader sees.
+- The device gate is a **runtime frame probe** (`FrameProbe.tsx`), not feature
+  detection. `navigator.deviceMemory` and `connection.saveData` are undefined
+  on iOS and in Firefox, so a `deviceMemory < 4` test fails OPEN there.
 
 ## Commands
 
