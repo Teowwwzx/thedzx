@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="5" fill="#171d28"/>
+  <!-- a room, a door, and a tower: the whole site in 32px -->
+  <rect x="6" y="15" width="11" height="11" fill="none" stroke="#a85520" stroke-width="2"/>
+  <rect x="20" y="6" width="6" height="20" fill="#a85520"/>
+  <rect x="21.5" y="3" width="3" height="3" fill="#a85520"/>
+</svg>

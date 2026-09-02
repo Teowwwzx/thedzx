@@ -1,0 +1,19 @@
+# Cloudflare Workers Static Assets reads this file.
+# Without it everything is served `max-age=0, must-revalidate`.
+
+# Astro's own build output is content-hashed — safe to cache forever.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# OG cards change only when a post's title or description changes.
+/og/*
+  Cache-Control: public, max-age=86400
+
+# The contract the 3D world polls. Short, so a new post shows up quickly.
+/world.json
+  Cache-Control: public, max-age=300, must-revalidate
+  Content-Type: application/json; charset=utf-8
+
+# When 3D assets land they go here, content-hashed, and get the immutable treatment.
+/models/*
+  Cache-Control: public, max-age=31536000, immutable

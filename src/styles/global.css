@@ -1,0 +1,406 @@
+/* ------------------------------------------------------------------
+   Design tokens.
+
+   Light is the base. Dark is declared twice on purpose: once behind
+   prefers-color-scheme (guarded so an explicit light choice wins) and
+   once behind [data-theme="dark"] (so the toggle wins in both
+   directions). Never declare a colour only inside one of those blocks
+   or it will not apply in the un-stamped default state.
+   ------------------------------------------------------------------ */
+
+:root {
+  --bg:        #e9ebef;
+  --surface:   #f6f7f9;
+  --surface-2: #dfe3e9;
+  --ink:       #171d28;
+  --ink-2:     #394354;
+  --muted:     #5a6473;
+  --line:      #c8ced8;
+  --line-soft: #dbe0e7;
+
+  --accent:      #a85520;
+  --accent-ink:  #8c4517;
+  --accent-soft: #f0decd;
+
+  --code-bg: #1a2029;
+  --code-ink: #d8dee8;
+
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-prose: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  --measure: 68ch;
+  --gutter: clamp(18px, 5vw, 40px);
+  --shell: 720px;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:        #10141b;
+    --surface:   #181d26;
+    --surface-2: #212836;
+    --ink:       #dfe5ee;
+    --ink-2:     #b3bccb;
+    --muted:     #8692a5;
+    --line:      #2e3644;
+    --line-soft: #242b37;
+
+    --accent:      #de8b4c;
+    --accent-ink:  #eda771;
+    --accent-soft: #3a2a1d;
+
+    --code-bg: #0a0d12;
+    --code-ink: #c9d1de;
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg:        #10141b;
+  --surface:   #181d26;
+  --surface-2: #212836;
+  --ink:       #dfe5ee;
+  --ink-2:     #b3bccb;
+  --muted:     #8692a5;
+  --line:      #2e3644;
+  --line-soft: #242b37;
+
+  --accent:      #de8b4c;
+  --accent-ink:  #eda771;
+  --accent-soft: #3a2a1d;
+
+  --code-bg: #0a0d12;
+  --code-ink: #c9d1de;
+
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------------ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-prose);
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+img, video, canvas, svg { max-width: 100%; height: auto; display: block; }
+
+a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:hover { color: var(--accent); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.018em;
+  text-wrap: balance;
+  margin: 0;
+}
+
+.shell {
+  width: 100%;
+  max-width: var(--shell);
+  margin: 0 auto;
+  padding-inline: var(--gutter);
+}
+
+.wide { max-width: 940px; }
+
+main { flex: 1 0 auto; padding-block: 40px 88px; }
+
+/* --- eyebrow / label type --- */
+.label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* --- site header --- */
+.site-header {
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.site-header .bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+  padding-block: 18px;
+  flex-wrap: wrap;
+}
+
+.brand {
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.brand:hover { color: var(--accent); }
+
+.site-nav {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.site-nav a {
+  color: var(--muted);
+  text-decoration: none;
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+}
+
+.site-nav a:hover { color: var(--accent-ink); border-bottom-color: var(--accent-ink); }
+
+/* Current page carries weight + an underline, not just a colour shift. */
+.site-nav a[aria-current="page"] {
+  color: var(--accent-ink);
+  border-bottom-color: var(--accent-ink);
+  font-weight: 700;
+}
+
+/* --- footer --- */
+.site-footer {
+  border-top: 1px solid var(--line);
+  padding-block: 28px 40px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.site-footer a { color: var(--muted); }
+.site-footer a:hover { color: var(--accent); }
+
+.site-footer .rows { display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; }
+
+/* --- prose --- */
+.prose { max-width: var(--measure); }
+.prose > * + * { margin-top: 1.1em; }
+.prose h2 { font-size: 25px; margin-top: 2.2em; }
+.prose h3 { font-size: 19px; margin-top: 1.8em; }
+.prose ul, .prose ol { padding-left: 1.3em; }
+.prose li + li { margin-top: 0.4em; }
+
+.prose blockquote {
+  margin-inline: 0;
+  padding: 2px 0 2px 20px;
+  border-left: 3px solid var(--accent);
+  color: var(--ink-2);
+  font-style: italic;
+}
+
+.prose hr { border: 0; border-top: 1px solid var(--line); margin-block: 2.4em; }
+
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--surface-2);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.prose :where(pre) {
+  padding: 18px 20px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* Shiki dual-theme switching.
+   `shikiConfig.themes` emits both palettes inline — light as real colours,
+   dark as --shiki-dark / --shiki-dark-bg custom properties — but Astro does
+   NOT emit the CSS that swaps them. Without these three blocks the dark
+   palette is dead data and every code block renders light tokens.
+   Do not add `background: var(--code-bg) !important` back: it beats Shiki's
+   inline background while `color` does not beat its inline colour, which is
+   how this ended up at 1.1:1 contrast. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .astro-code,
+  :root:not([data-theme="light"]) .astro-code span {
+    color: var(--shiki-dark) !important;
+    background-color: var(--shiki-dark-bg) !important;
+    font-style: var(--shiki-dark-font-style) !important;
+    font-weight: var(--shiki-dark-font-weight) !important;
+    text-decoration: var(--shiki-dark-text-decoration) !important;
+  }
+}
+
+:root[data-theme="dark"] .astro-code,
+:root[data-theme="dark"] .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
+}
+
+.prose pre code { background: none; padding: 0; font-size: inherit; }
+
+.prose :where(table) { width: 100%; border-collapse: collapse; font-size: 15px; }
+.prose :where(th, td) { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line-soft); }
+.prose :where(th) { font-family: var(--font-ui); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+
+.table-scroll { overflow-x: auto; }
+
+/* --- post list --- */
+.post-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+
+.post-list > li { border-top: 1px solid var(--line-soft); }
+.post-list > li:last-child { border-bottom: 1px solid var(--line-soft); }
+
+.post-item {
+  display: block;
+  padding: 20px 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.post-item:hover .post-item-title { color: var(--accent); }
+
+.post-item-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 7px;
+}
+
+.post-item-title {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--ink);
+  margin: 0 0 5px;
+}
+
+.post-item-desc { margin: 0; color: var(--ink-2); font-size: 15.5px; line-height: 1.55; max-width: 62ch; }
+
+/* --- zone chip --- */
+.chip {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2.5px 7px;
+  border-radius: 3px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  text-decoration: none;
+}
+
+a.chip:hover { background: var(--accent-ink); color: var(--bg); }
+
+.chip.ghost { background: var(--surface-2); color: var(--muted); }
+
+/* --- zone cards --- */
+.zone-grid { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+@media (min-width: 640px) { .zone-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.zone-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.zone-card:hover { border-color: var(--accent); }
+.zone-card h3 { font-size: 17px; }
+.zone-card p { margin: 0; font-size: 14.5px; color: var(--ink-2); line-height: 1.5; }
+
+.zone-card .rail {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line-soft);
+  padding-bottom: 8px;
+}
+
+.zone-card .rail .elev { color: var(--accent); }
+
+.zone-card .count { margin-top: auto; padding-top: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
+/* --- misc --- */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--accent-ink);
+  color: var(--bg);
+  padding: 10px 16px;
+  z-index: 10;
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+.skip-link:focus { left: 0; }
+
+.note {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  border-radius: 4px;
+  padding: 16px 18px;
+  font-size: 15px;
+  color: var(--ink-2);
+}
+
+.note p { margin: 0; }
+.note p + p { margin-top: 10px; }
+
+.tabular { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

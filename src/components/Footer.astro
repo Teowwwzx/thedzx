@@ -1,0 +1,15 @@
+---
+import { SITE } from '../consts';
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="shell wide rows">
+    <span>© {year} {SITE.author}. {SITE.tagline}</span>
+    <span>
+      <a href="/rss.xml">RSS</a> ·
+      <a href="/world.json">world.json</a> ·
+      <a href="/credits/">Credits</a>
+    </span>
+  </div>
+</footer>

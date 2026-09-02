@@ -1,0 +1,75 @@
+---
+import { SITE, OG_LOCALE } from '../consts';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Absolute or site-relative OG image URL. Defaults to the site card. */
+  image?: string;
+  type?: 'website' | 'article';
+  /** Structured data objects. Emitted as one ld+json block each. */
+  jsonLd?: Record<string, unknown>[];
+  /** Keep the page out of the index and emit no canonical (used by 404). */
+  noindex?: boolean;
+}
+
+const {
+  title,
+  description,
+  image = '/og/home.png',
+  type = 'website',
+  jsonLd = [],
+  noindex = false,
+} = Astro.props;
+
+// Canonical is derived from `site` in astro.config.mjs, never from the
+// request host — so a preview deployment can never emit itself as canonical.
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL(image, Astro.site);
+const fullTitle = title === SITE.title ? title : `${title} — ${SITE.title}`;
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+{
+  /* A canonical on the 404 page would point at a URL that is never generated,
+     and would invite indexing of a page that only exists as a fallback. */
+  noindex ? (
+    <meta name="robots" content="noindex, follow" />
+  ) : (
+    <link rel="canonical" href={canonical} />
+  )
+}
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="sitemap" href="/sitemap-index.xml" />
+<link
+  rel="alternate"
+  type="application/rss+xml"
+  title={`${SITE.title} — all posts`}
+  href={new URL('rss.xml', Astro.site)}
+/>
+
+<meta property="og:type" content={type} />
+<meta property="og:site_name" content={SITE.title} />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={ogImage} />
+<meta property="og:locale" content={OG_LOCALE} />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={fullTitle} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />
+
+<meta name="generator" content={Astro.generator} />
+
+{
+  jsonLd.map((block) => (
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(block)} />
+  ))
+}

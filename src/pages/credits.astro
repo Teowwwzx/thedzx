@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+/**
+ * Generated from assets/manifest.json. Every downloaded asset lands there
+ * on the day you download it — source URL, author, exact licence string.
+ * You will not remember any of this in a year, and CC-BY is only free if
+ * you actually attribute.
+ */
+const manifest = (await import('../../assets/manifest.json')).default as {
+  assets: {
+    name: string; author: string; licence: string;
+    source: string; downloaded: string; usedIn: string[];
+  }[];
+};
+---
+
+<BaseLayout
+  title="Credits"
+  description="Attribution for every third-party model, texture, font and data source used to build this site."
+  wide
+>
+  <div class="prose" style="padding-block:32px">
+    <h1 style="font-size:clamp(28px,5vw,38px)">Credits</h1>
+
+    {
+      manifest.assets.length === 0 ? (
+        <p class="note">
+          No third-party assets yet — stage 0 is text only. The first entry
+          appears the day the first model is downloaded.
+        </p>
+      ) : (
+        <div class="table-scroll">
+          <p>
+            Everything below was made by someone else. Licences are recorded
+            exactly as they were stated on the day the asset was downloaded.
+          </p>
+          <table>
+            <thead>
+              <tr><th>Asset</th><th>Author</th><th>Licence</th><th>Used in</th></tr>
+            </thead>
+            <tbody>
+              {manifest.assets.map((a) => (
+                <tr>
+                  <td><a href={a.source} rel="noopener">{a.name}</a></td>
+                  <td>{a.author}</td>
+                  <td>{a.licence}</td>
+                  <td>{a.usedIn.join(', ')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
+    }
+  </div>
+</BaseLayout>

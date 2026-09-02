@@ -1,0 +1,49 @@
+---
+import { ZONES, type ZoneId } from '../consts';
+import { postUrl, type Post } from '../lib/posts';
+import FormattedDate from './FormattedDate.astro';
+
+interface Props {
+  posts: Post[];
+  /** Hide the zone chip when the list is already inside one zone. */
+  showZone?: boolean;
+  /**
+   * Heading level for post titles. On a zone page the page <h1> is the zone,
+   * so h2 is right. On the index the list sits under an <h2> section heading,
+   * so post titles must be h3 or the outline says they aren't inside it.
+   */
+  headingLevel?: 2 | 3;
+  /** Overrides the generic "nothing here yet" copy. */
+  emptyState?: string;
+}
+
+const { posts, showZone = true, headingLevel = 2, emptyState } = Astro.props;
+const Heading = `h${headingLevel}` as 'h2' | 'h3';
+---
+
+{
+  posts.length === 0 ? (
+    <p class="note">
+      {emptyState ??
+        'Nothing here yet. Every zone exists on the map before it exists in 3D — the rule is five published posts before a location gets built.'}
+    </p>
+  ) : (
+    <ul class="post-list">
+      {posts.map((post) => (
+        <li>
+          {/* One real <a href> per post. The 3D world will add a second way
+              in, never the only way. */}
+          <a class="post-item" href={postUrl(post)}>
+            <p class="post-item-meta">
+              <FormattedDate date={post.data.pubDate} />
+              {showZone && <span class="chip ghost">{ZONES[post.data.zone as ZoneId].label}</span>}
+              {post.data.draft && <span class="chip">Draft</span>}
+            </p>
+            <Heading class="post-item-title">{post.data.title}</Heading>
+            <p class="post-item-desc">{post.data.description}</p>
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}

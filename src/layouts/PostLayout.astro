@@ -1,0 +1,89 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import FormattedDate from '../components/FormattedDate.astro';
+import { SITE, ZONES, type ZoneId } from '../consts';
+import type { Post } from '../lib/posts';
+
+interface Props { post: Post; }
+const { post } = Astro.props;
+const { title, description, pubDate, updatedDate, zone, prop, tags, draft } = post.data;
+const z = ZONES[zone as ZoneId];
+
+const url = new URL(`/blog/${post.id}/`, Astro.site).toString();
+
+// BlogPosting + BreadcrumbList. The breadcrumb encodes the real spatial
+// hierarchy — site → zone → post — which is also how the 3D world navigates.
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: title,
+    description,
+    datePublished: pubDate.toISOString(),
+    ...(updatedDate ? { dateModified: updatedDate.toISOString() } : {}),
+    author: { '@type': 'Person', name: SITE.author, url: SITE.url },
+    publisher: { '@type': 'Person', name: SITE.author, url: SITE.url },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    url,
+    ...(tags.length ? { keywords: tags.join(', ') } : {}),
+    articleSection: z.label,
+    inLanguage: SITE.locale,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: SITE.title, item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: z.label, item: new URL(`/${zone}/`, Astro.site).toString() },
+      { '@type': 'ListItem', position: 3, name: title, item: url },
+    ],
+  },
+];
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  type="article"
+  image={`/og/blog/${post.id}.png`}
+  jsonLd={jsonLd}
+>
+  <article class="prose">
+    <header style="margin-bottom:36px">
+      <p class="post-item-meta" style="margin-bottom:12px">
+        <FormattedDate date={pubDate} />
+        <a class="chip" href={`/${zone}/`}>{z.label}</a>
+        {draft && <span class="chip ghost">Draft</span>}
+      </p>
+      <h1 style="font-size:clamp(29px,5.5vw,40px);margin-bottom:14px">{title}</h1>
+      <p style="color:var(--ink-2);font-size:19px;margin:0">{description}</p>
+      {
+        updatedDate && (
+          <p class="label" style="margin-top:14px">
+            Updated <FormattedDate date={updatedDate} />
+          </p>
+        )
+      }
+    </header>
+
+    <slot />
+
+    <footer style="margin-top:56px;padding-top:24px;border-top:1px solid var(--line)">
+      <p class="label" style="margin:0 0 10px">
+        Zone: {z.label} · Prop: {prop} · Elevation {z.elevation}
+      </p>
+      {
+        tags.length > 0 && (
+          <p style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px">
+            {tags.map((t) => (
+              <span class="chip ghost">{t}</span>
+            ))}
+          </p>
+        )
+      }
+      <p style="margin:0">
+        <a href={`/${zone}/`}>More from {z.label}</a> · <a href="/">All posts</a>
+      </p>
+    </footer>
+  </article>
+</BaseLayout>

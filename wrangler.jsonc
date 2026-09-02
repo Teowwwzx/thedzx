@@ -1,0 +1,29 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "thedzx",
+  "compatibility_date": "2026-09-02",
+
+  // Static assets only. There is no Worker script in stage 0 — this deploys
+  // the contents of ./dist straight to Cloudflare's edge, which is the free
+  // and unmetered path.
+  //
+  // Do NOT add "run_worker_first": it converts free static-asset requests
+  // into billable Worker invocations.
+  //
+  // When you add the market-data proxy later, put it in a SEPARATE Worker
+  // bound to a real hostname (api.example.com) — caches.default is a no-op
+  // on *.workers.dev because the Cache API is zone-level.
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  }
+
+  // BEFORE YOUR FIRST REAL DEPLOY, bind a custom domain. Without one this
+  // publishes to thedzx.<your-subdomain>.workers.dev, while every canonical
+  // URL, og:url, sitemap entry and robots.txt Sitemap: line says the domain in
+  // site.config.mjs — two hosts serving identical content, which is the
+  // duplicate-content case Google penalises. Uncomment and edit:
+  //
+  // "routes": [{ "pattern": "thedzx.com", "custom_domain": true }],
+  // "workers_dev": false
+}
