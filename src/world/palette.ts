@@ -1,9 +1,11 @@
 /**
  * The room's colours, in one place.
  *
- * These are the CSS tokens from src/styles/global.css, resolved to hex so
- * three.js can use them. The world reads as part of the site because it is
- * literally the same palette — not a separate art direction.
+ * A sibling of the CSS tokens in src/styles/global.css, not a copy of them:
+ * these are lit by three.js, so the structural values are lifted well above
+ * the page's surface colours or the flat shading reads as near-black. The
+ * accents are the same family as --accent / --accent-warm so the room belongs
+ * to the site, but do not expect the hex values to match token-for-token.
  *
  * Flat-shaded, no textures, no PBR maps. That is the whole art strategy: it
  * is a deliberate style, it stays under budget, and it does not require an

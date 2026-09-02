@@ -6,10 +6,15 @@ import { postsInZone, postUrl } from '../../lib/posts';
 /**
  * The 3D room.
  *
- * This page is a normal, fully server-rendered HTML page. The world is not
- * loaded until the visitor clicks Enter — so the canvas can never be the LCP
- * element (AGENTS.md rule 3), and everything the room contains is reachable
- * as real markup below whether or not any JavaScript runs (rule 2).
+ * A normal, fully server-rendered page. The world is not loaded until the
+ * visitor clicks Enter — so the canvas can never be the LCP element
+ * (AGENTS.md rule 3), and everything the room contains is reachable as real
+ * markup below whether or not any JavaScript runs (rule 2).
+ *
+ * Title and H1 are deliberately NOT "The Room": /room/ already owns that
+ * exact title, h1 and OG card. Two self-canonical URLs in the same sitemap
+ * competing for one query is a duplicate-content problem, and the more useful
+ * page — the readable one — should win it.
  */
 const zone = ZONES.room;
 const posts = await postsInZone('room');
@@ -17,25 +22,35 @@ const posts = await postsInZone('room');
 const onDesk = posts.filter((p) => p.data.prop === 'monitor').length;
 const onShelf = posts.filter((p) => p.data.prop === 'bookshelf').length;
 
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
 const description =
-  'Step into the room: a desk of IT writing, a bookshelf of essays, a TV showing the markets, and a door that is not open yet.';
+  'Walk into the room in 3D: a desk of IT writing, a bookshelf of essays, a TV showing the markets, and a door that is not open yet.';
 ---
 
-<BaseLayout title="The Room" description={description} image="/og/zone/room.png" wide>
+<BaseLayout title="Walk into the room" description={description} image="/og/zone/room.png" wide>
   <section class="world-intro">
     <p class="label">{zone.elevation} · Stage 1 · Greybox</p>
-    <h1>The Room</h1>
+    <h1>Walk into the room</h1>
     <p class="world-lede">{description}</p>
 
-    <button type="button" id="world-enter" class="world-enter">
+    <!--
+      Disabled by default and enabled by the script below. Otherwise the
+      primary call to action renders live and clickable with JS off and does
+      nothing at all when pressed.
+    -->
+    <button type="button" id="world-enter" class="world-enter" data-ready="no" disabled>
       <span class="world-enter-main">Enter the room</span>
       <span class="world-enter-sub">WebGL · loads on click, not on page load</span>
     </button>
 
+    <p id="world-gate-msg" class="note" hidden></p>
+
     <noscript>
       <p class="note">
-        The room needs JavaScript. Everything in it is listed below, which is
-        rather the point — the world is a second way in, never the only one.
+        The room needs JavaScript and WebGL. Everything in it is listed below,
+        which is rather the point — the world is a second way in, never the
+        only one.
       </p>
     </noscript>
   </section>
@@ -52,24 +67,26 @@ const description =
     <h2 class="label">What's in here</h2>
     <ul class="world-index-list">
       <li>
-        <strong>The desk</strong> — IT knowledge, build logs, code.
-        <a href="/room/">{onDesk === 1 ? '1 post' : `${onDesk} posts`} on the desk</a>
+        <strong>The desk</strong> — IT knowledge, build logs, code.{' '}
+        {plural(onDesk, 'post', 'posts')} sit on it.
       </li>
       <li>
-        <strong>The bookshelf</strong> — longer essays, one spine each.
-        <a href="/room/">{onShelf === 1 ? '1 essay' : `${onShelf} essays`} on the shelf</a>
+        <strong>The bookshelf</strong> — longer essays, one spine each.{' '}
+        {plural(onShelf, 'essay', 'essays')} on the shelf.
       </li>
       <li>
-        <strong>The TV</strong> — markets rather than posts. <a href="/tv/">Wired up in stage 3</a>.
+        <strong>The TV</strong> — markets rather than posts.
+        <a href="/tv/">Wired up in stage 3</a>.
       </li>
       <li>
-        <strong>The door</strong> — locked. Outside, the gym and Merdeka 118 come
-        after this room has five published posts behind it.
+        <strong>The door</strong> — locked. Outside, the gym and Merdeka 118
+        come after this room has five published posts behind it.
+        <a href="/">See the whole map</a>.
       </li>
     </ul>
 
     {
-      posts.length > 0 && (
+      posts.length > 0 ? (
         <ul class="post-list" style="margin-top:28px">
           {posts.map((post) => (
             <li>
@@ -83,42 +100,87 @@ const description =
             </li>
           ))}
         </ul>
+      ) : (
+        <p class="note" style="margin-top:28px">
+          Nothing published in this room yet, so the desk and the shelf are
+          both empty in there too. <a href="/room/">The room's reading list</a>
+          is where posts appear first.
+        </p>
       )
     }
   </section>
 </BaseLayout>
 
 <script>
-  // Click-to-load. Nothing from the world bundle — React, three.js, R3F, drei —
-  // is fetched until this handler runs, so the page's own JS footprint is
-  // this listener and nothing more.
+  // Click-to-load. Nothing from the world bundle — React, three.js, R3F,
+  // drei — is fetched until this handler runs, so the page's own JS footprint
+  // is this listener and nothing more.
   const btn = document.getElementById('world-enter') as HTMLButtonElement | null;
   const root = document.getElementById('world-root');
+  const msg = document.getElementById('world-gate-msg');
+  const main = btn?.querySelector('.world-enter-main');
 
-  btn?.addEventListener('click', async () => {
-    if (!root) return;
-    btn.disabled = true;
-    btn.classList.add('is-loading');
-    const main = btn.querySelector('.world-enter-main');
-    if (main) main.textContent = 'Loading the room…';
-
+  /**
+   * Cheap capability check, run BEFORE the download.
+   *
+   * The full device gate lives inside the world bundle, which meant a device
+   * it rejected had already paid for ~1.09 MB of JavaScript to be told no.
+   * Anything we can decide from a 2 KB script belongs here instead.
+   */
+  function blocker(): string | null {
+    let gl: WebGL2RenderingContext | null = null;
     try {
-      const { mount } = await import('../../world/mount');
-      root.hidden = false;
-      await mount(root);
-      btn.hidden = true;
-      root.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } catch (err) {
-      console.error('[world] failed to load', err);
-      btn.disabled = false;
-      btn.classList.remove('is-loading');
-      if (main) main.textContent = 'Enter the room';
-      root.hidden = true;
-      const p = document.createElement('p');
-      p.className = 'note';
-      p.textContent =
-        'The room failed to load. Everything in it is listed below, so nothing is lost.';
-      btn.after(p);
+      gl = document.createElement('canvas').getContext('webgl2');
+    } catch {
+      gl = null;
     }
-  });
+    if (!gl) return 'This browser has no WebGL2, so the room cannot run here.';
+    // Free the probe context straight away; browsers cap how many exist.
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+
+    // Chromium-only, and undefined on iOS and in Firefox — so its ABSENCE
+    // must never be read as "fine". Only a positive true blocks.
+    const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    if (conn?.saveData === true) {
+      return 'Your browser is in data-saver mode, so the room has not been loaded.';
+    }
+    return null;
+  }
+
+  if (btn && root) {
+    const reason = blocker();
+    if (reason) {
+      if (msg) {
+        msg.textContent = `${reason} Everything in the room is listed below.`;
+        msg.hidden = false;
+      }
+      btn.hidden = true;
+    } else {
+      btn.disabled = false;
+      btn.dataset.ready = 'yes';
+    }
+
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      if (main) main.textContent = 'Loading the room…';
+
+      try {
+        const { mount } = await import('../../world/mount');
+        root.hidden = false;
+        await mount(root);
+        btn.hidden = true;
+        root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (err) {
+        console.error('[world] failed to load', err);
+        btn.disabled = false;
+        if (main) main.textContent = 'Enter the room';
+        root.hidden = true;
+        if (msg) {
+          msg.textContent =
+            'The room failed to load. Everything in it is listed below, so nothing is lost.';
+          msg.hidden = false;
+        }
+      }
+    });
+  }
 </script>

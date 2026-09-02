@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import type { Group } from 'three';
+import { PerspectiveCamera, Vector3, type Group } from 'three';
 import { PALETTE } from './palette';
 import { Skyline } from './Skyline';
 import { Hotspot } from './Hotspot';
@@ -35,6 +35,9 @@ import type { WorldPost } from './types';
  * ---------------------------------------------------------------------------
  */
 
+/** Matches the Canvas clear colour, so the shroud reads as empty space. */
+const VOID_COLOR = '#10141b';
+
 /** The window opening in the back wall. Wall pieces are derived from these. */
 const WIN = { x0: 0.5, x1: 1.7, y0: 1.0, y1: 2.1 } as const;
 const ROOM = { left: -3.05, right: 3.05, back: -2.05, front: 2.4, height: 2.8 } as const;
@@ -64,16 +67,100 @@ function Box({
 }
 
 /**
- * R3F's default camera looks at the origin, which is the middle of the floor —
- * that is why an untouched scene sits low in frame with dead space above.
- * Aim it at eye height, once.
+ * The points that MUST stay on screen — the four hotspot markers plus the
+ * room's back corners.
+ *
+ * A flat half-extent is not enough: the door hotspot sits at z=+0.75, much
+ * nearer the camera than the room centre, so it needs a wider angle than the
+ * back wall does. Framing on a box put the door off-screen on every tablet
+ * and desktop aspect. These get projected with a real camera instead.
+ */
+const FRAME_POINTS: readonly [number, number, number][] = [
+  [-1.2, 1.78, -1.8], // desk marker
+  [-2.85, 2.32, -0.3], // bookshelf marker
+  [2.75, 2.06, -0.85], // TV marker
+  [2.75, 2.42, 0.75], // door marker — the binding constraint on wide screens
+  [-3.05, 0.1, -2.05],
+  [3.05, 0.1, -2.05],
+  [-3.05, 2.75, -2.05],
+  [3.05, 2.75, -2.05],
+];
+
+const FRAME = {
+  centreZ: -0.5,
+  eyeY: 1.72,
+  eyeX: 0.1,
+  target: [0, 1.35, -1.2] as const,
+  /**
+   * Markers must land well inside the viewport, not merely on it: each one
+   * carries a DOM label centred on it, so at 0.9 the labels were clipped by
+   * the canvas edge on a phone ("BOOKSHELF" rendered as "3OOKSHELF").
+   */
+  margin: 0.78,
+  minDistance: 4.6,
+  maxDistance: 17,
+} as const;
+
+/**
+ * Frames the room for whatever aspect ratio the canvas actually has.
+ *
+ * Two things went wrong with a fixed camera. R3F's default camera looks at the
+ * ORIGIN — the middle of the floor — which parks the room low with dead space
+ * above it. And `fov` in three.js is the VERTICAL fov, so on a portrait phone
+ * (canvas ~343x503, aspect 0.68) the horizontal fov collapses to about 33°:
+ * the desk stayed in frame and the bookshelf, TV and door all projected
+ * outside the canvas. drei <Html> portals into the canvas container, which is
+ * overflow:hidden, so their labels were not just off-camera — they were gone.
+ * Three quarters of the interactive layer was dead on the device class that
+ * matters most.
+ *
+ * So: pick the camera distance from the aspect ratio, and aim at eye height.
  */
 function CameraAim() {
-  const { camera } = useThree();
+  const { camera, size } = useThree();
+  // One scratch camera and vector, reused — this runs on every resize.
+  const probe = useMemo(() => new PerspectiveCamera(), []);
+  const scratch = useMemo(() => new Vector3(), []);
+
   useEffect(() => {
-    camera.lookAt(0, 1.35, -1.2);
+    if (!(camera instanceof PerspectiveCamera)) return;
+
+    const aspect = size.width / Math.max(size.height, 1);
+
+    // Walk outward until every point in FRAME_POINTS actually projects inside
+    // the viewport. Using the real projection rather than a closed-form box
+    // fit is what makes this correct at BOTH extremes: a tall portrait phone
+    // and a short wide desktop bind on different points.
+    const fits = (distance: number) => {
+      probe.fov = camera.fov;
+      probe.aspect = aspect;
+      probe.near = camera.near;
+      probe.far = camera.far;
+      probe.position.set(FRAME.eyeX, FRAME.eyeY, FRAME.centreZ + distance);
+      probe.lookAt(FRAME.target[0], FRAME.target[1], FRAME.target[2]);
+      probe.updateMatrixWorld(true);
+      probe.updateProjectionMatrix();
+      return FRAME_POINTS.every((p) => {
+        scratch.set(p[0], p[1], p[2]).project(probe);
+        return Math.abs(scratch.x) <= FRAME.margin && Math.abs(scratch.y) <= FRAME.margin;
+      });
+    };
+
+    // Annotated: FRAME is `as const`, so this would otherwise infer the
+    // literal type 17 and reject every other distance.
+    let distance: number = FRAME.maxDistance;
+    for (let d = FRAME.minDistance; d <= FRAME.maxDistance; d += 0.1) {
+      if (fits(d)) {
+        distance = d;
+        break;
+      }
+    }
+
+    camera.position.set(FRAME.eyeX, FRAME.eyeY, FRAME.centreZ + distance);
+    camera.lookAt(FRAME.target[0], FRAME.target[1], FRAME.target[2]);
     camera.updateProjectionMatrix();
-  }, [camera]);
+  }, [camera, size, probe, scratch]);
+
   return null;
 }
 
@@ -96,6 +183,27 @@ export function Room({ posts, activeProp, reducedMotion, onOpen }: Props) {
   // Back wall, derived from WIN so the opening can never drift out of the
   // hole. Getting this wrong by 5cm leaks the skyline through the wall.
   const wallY = ROOM.height / 2;
+
+  // Same four-piece cut, at a far larger extent, sitting just behind the wall.
+  const SHROUD = { x: 16, yLow: -8, yHigh: 14, z: ROOM.back - 0.14 };
+  const shroudPieces: { pos: [number, number, number]; size: [number, number, number] }[] = [
+    {
+      pos: [(-SHROUD.x + WIN.x0) / 2, (SHROUD.yLow + SHROUD.yHigh) / 2, SHROUD.z],
+      size: [WIN.x0 + SHROUD.x, SHROUD.yHigh - SHROUD.yLow, 0.1],
+    },
+    {
+      pos: [(WIN.x1 + SHROUD.x) / 2, (SHROUD.yLow + SHROUD.yHigh) / 2, SHROUD.z],
+      size: [SHROUD.x - WIN.x1, SHROUD.yHigh - SHROUD.yLow, 0.1],
+    },
+    {
+      pos: [(WIN.x0 + WIN.x1) / 2, (SHROUD.yLow + WIN.y0) / 2, SHROUD.z],
+      size: [WIN.x1 - WIN.x0, WIN.y0 - SHROUD.yLow, 0.1],
+    },
+    {
+      pos: [(WIN.x0 + WIN.x1) / 2, (WIN.y1 + SHROUD.yHigh) / 2, SHROUD.z],
+      size: [WIN.x1 - WIN.x0, SHROUD.yHigh - WIN.y1, 0.1],
+    },
+  ];
   const backPieces: { pos: [number, number, number]; size: [number, number, number] }[] = [
     // left of the window, full height
     {
@@ -168,8 +276,30 @@ export function Room({ posts, activeProp, reducedMotion, onOpen }: Props) {
       {/* the mullion */}
       <Box position={[1.1, 1.55, ROOM.back - 0.02]} size={[0.045, 1.1, 0.04]} color={PALETTE.skirting} />
 
-      {/* The city sits behind the window and is sized to be visible only
-          through it — see Skyline for why it is not one big backdrop. */}
+      {/*
+        The shroud: the back wall continued far past the room, in the canvas's
+        own background colour, with the same window hole cut in it.
+
+        Without it the camera sees OVER the top of the back wall into the void
+        beyond, where the sky plane and Merdeka 118's spire are floating — so
+        the city appeared hovering above the ceiling and broke the illusion of
+        being indoors. Pulling the camera back to fit a portrait phone made it
+        much worse, because the further back you stand the more you see over
+        the wall.
+
+        Colouring it the clear colour means it reads as nothing at all: the
+        room sits in darkness, and the window is the only way the city gets in.
+      */}
+      {shroudPieces.map((piece, i) => (
+        <mesh key={`shroud-${i}`} position={piece.pos}>
+          <boxGeometry args={piece.size} />
+          {/* Basic, not Lambert: a lit material would shade this and give the
+              trick away as a big grey slab. */}
+          <meshBasicMaterial color={VOID_COLOR} />
+        </mesh>
+      ))}
+
+      {/* The city sits behind the window and is seen only through it. */}
       <group position={[1.1, 0, ROOM.back]}>
         <Skyline />
       </group>
@@ -201,7 +331,10 @@ export function Room({ posts, activeProp, reducedMotion, onOpen }: Props) {
       </mesh>
 
       {/* ---- the bookshelf: essays, one spine each ---- */}
-      <Box position={[-2.85, 1.05, -0.3]} size={[0.36, 2.1, 0.08]} color={PALETTE.shelf} />
+      {/* Back panel: thin along X (against the wall), not along Z — the
+          earlier size stood it up as a divider through the middle of the
+          shelf, intersecting every board and two spines in seven. */}
+      <Box position={[-2.96, 1.05, -0.3]} size={[0.05, 2.1, 0.9]} color={PALETTE.shelf} />
       <Box position={[-2.85, 0.05, -0.3]} size={[0.36, 0.1, 0.9]} color={PALETTE.shelf} />
       {[0.55, 1.05, 1.55, 2.05].map((y) => (
         <Box key={y} position={[-2.85, y, -0.3]} size={[0.36, 0.06, 0.88]} color={PALETTE.shelf} />
@@ -245,6 +378,7 @@ export function Room({ posts, activeProp, reducedMotion, onOpen }: Props) {
       {/* ---- the interactive layer ---- */}
       <Hotspot
         position={[-1.2, 1.78, -1.8]}
+        prop="monitor"
         label="Desk"
         count={countFor('monitor')}
         active={activeProp === 'monitor'}
@@ -253,6 +387,7 @@ export function Room({ posts, activeProp, reducedMotion, onOpen }: Props) {
       />
       <Hotspot
         position={[-2.85, 2.32, -0.3]}
+        prop="bookshelf"
         label="Bookshelf"
         count={countFor('bookshelf')}
         active={activeProp === 'bookshelf'}
@@ -260,7 +395,8 @@ export function Room({ posts, activeProp, reducedMotion, onOpen }: Props) {
         onOpen={() => onOpen('bookshelf')}
       />
       <Hotspot
-        position={[ROOM.right - 0.3, 2.24, -0.85]}
+        position={[ROOM.right - 0.3, 2.06, -0.85]}
+        prop="screen"
         label="TV"
         count={countFor('screen')}
         active={activeProp === 'screen'}
@@ -268,7 +404,8 @@ export function Room({ posts, activeProp, reducedMotion, onOpen }: Props) {
         onOpen={() => onOpen('screen')}
       />
       <Hotspot
-        position={[ROOM.right - 0.3, 2.24, 0.75]}
+        position={[ROOM.right - 0.3, 2.42, 0.75]}
+        prop="door"
         label="Door"
         count={0}
         active={activeProp === 'door'}

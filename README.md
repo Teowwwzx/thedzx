@@ -1,8 +1,11 @@
 # thedzx
 
-A personal blog that will become an explorable 3D world — a room with a desk,
-a street outside, a gym, and the top floors of Merdeka 118. **Stage 0 is the
-blog only.** No three.js yet, on purpose.
+A personal blog that doubles as an explorable 3D world — a room with a desk, a
+street outside, a gym, and the top floors of Merdeka 118.
+
+**Stage 1 is done:** the blog, plus a greybox room at `/world/`. Every post is
+real static HTML at a real URL first; the 3D world is a second way in, never
+the only one.
 
 The full build plan, including the engine choice, asset sources, licensing
 traps and roadmap, lives in the design doc this repo was scaffolded from.
@@ -40,11 +43,12 @@ npm run build && npm run budget
    404 with `X-Robots-Tag: noindex, nofollow`. That header must go, or none of
    the static-HTML-first architecture matters.
    ```bash
-   scp deploy/nginx-thedzx.site.conf do-ghost-dev:/etc/nginx/sites-available/thedzx.site
-   ssh do-ghost-dev 'nginx -t && systemctl reload nginx'
+   ./deploy/install-nginx.sh
    ```
-   Back up the existing file first — it also carries the `/cv` redirect and the
-   Cloudflare-only guard, both of which the new block preserves.
+   It backs up the existing block, refuses to proceed if `cf-allow.conf` is not
+   enabled anywhere (`$from_cloudflare` would be undefined and nginx would fail
+   to **start**, taking every site on the box down), reloads only if `nginx -t`
+   passes, and then curls the site to confirm the security headers survived.
 5. **Deploy.**
    ```bash
    npm run deploy
@@ -54,7 +58,7 @@ npm run build && npm run budget
    releases, so a rollback is one `ln -sfn` away. Never upload `dist/` by hand:
    it is gitignored, so a fresh clone has nothing to upload and a stale tree
    ships yesterday's HTML.
-5. **Verify Google can read it.** Register the domain in Search Console, then
+6. **Verify Google can read it.** Register the domain in Search Console, then
    use **URL Inspection → View Tested Page** on a post and confirm with your own
    eyes that the article text is in the HTML. This is the single check that
    proves the whole architecture is working.
@@ -78,14 +82,28 @@ src/
     og/[...route].png.ts Build-time OG cards (1200×630). The .png in the
                          filename is load-bearing — it keeps these as file
                          routes, exempt from trailingSlash: 'always'.
+    world/index.astro    /world/ — the shell. Click-to-load, plus the
+                         crawlable mirror of everything in the room.
+  world/                 The 3D room. Loaded only by a dynamic import().
+    Room.tsx             All the geometry. Swap this for CC0 kits later;
+                         nothing else changes.
+    World.tsx            Canvas, reader panel, device gate, error boundary.
+    Hotspot.tsx          A marker + its real DOM label (drei <Html>).
+    Skyline.tsx          Kuala Lumpur through the window, Merdeka 118 in it.
+    FrameProbe.tsx       The real device gate: measures 60 frames.
+    useDeviceGate.ts     Positive-only capability checks.
+    mount.ts             Entry point for the lazy bundle.
     credits.astro        Generated from assets/manifest.json
 assets/
   manifest.json          Every third-party asset, logged on download day
   CREDITS.md             The rule, and the known licence traps
 deploy/
-  nginx-thedzx.site.conf The apex server block. Cache headers, try_files for
-                         Astro's directory URLs, /cv redirect kept.
+  nginx-thedzx.site.conf The apex server block. ONE add_header set at server
+                         level + a $thedzx_cache map — see the note in it.
+  install-nginx.sh       Installs that block. Separate from deploy.sh on
+                         purpose: config changes on a shared box are risky.
   deploy.sh              Atomic release: rsync to releases/<ts>, flip symlink.
+                         Does not touch nginx.
 scripts/
   check-budgets.mjs      Asset budget gate — FAILS the build if an article
                          route ships executable JS. Wired now, matters at stage 2.
@@ -119,8 +137,10 @@ flat colour, generated in `src/world/Room.tsx`. Nothing is downloaded, so there
 is no asset budget to blow and no Blender step to get stuck in. This is the
 plan's advice taken literally: wire the routing against grey boxes first.
 
-The 3D bundle (~230 KB gzip) loads on click, never on page load. `/world/`
-itself ships about 1.2 KB of JS.
+The 3D bundle (~291 KB gzip) loads on click, never on page load. `/world/`
+itself ships about 2.4 KB of JS. Both numbers are enforced by
+`npm run budget`, so they cannot quietly drift — and both are gzip, because
+nginx serves gzip, not brotli.
 
 ### Next, in order
 

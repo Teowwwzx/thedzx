@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Component, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Room } from './Room';
 import { FrameProbe } from './FrameProbe';
@@ -25,6 +26,56 @@ const PROPS: Record<string, { label: string; empty: string }> = {
   },
 };
 
+/**
+ * Without this, a render-time throw anywhere in the world unmounts the whole
+ * tree and leaves an empty box on the page. The room is optional; the reading
+ * list is not, so failure has to land somewhere useful.
+ */
+export class WorldErrorBoundary extends Component<
+  { children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[world] render failed', error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.failed) {
+      return (
+        <div className="world-blocked">
+          <p>The room stopped working.</p>
+          <p>
+            Everything in it is on <a href="/room/">the reading list</a> — the
+            world is a second way in, never the only one.
+          </p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function useReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(
+    () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onChange = () => setReduced(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return reduced;
+}
+
 function Panel({
   prop,
   posts,
@@ -36,8 +87,9 @@ function Panel({
 }) {
   const meta = PROPS[prop];
   const items = posts.filter((p) => p.prop === prop);
+  const headingRef = useRef<HTMLHeadingElement>(null);
 
-  // Escape closes, and focus moves into the panel when it opens.
+  // Escape closes.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -46,10 +98,19 @@ function Panel({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  // Actually move focus in. Announcing role="dialog" while leaving focus on
+  // the hotspot button behind it tells a screen reader a dialog opened and
+  // then strands the user outside it.
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, [prop]);
+
   return (
     <div className="world-panel" role="dialog" aria-modal="false" aria-label={meta.label}>
       <div className="world-panel-head">
-        <h2>{meta.label}</h2>
+        <h2 ref={headingRef} tabIndex={-1}>
+          {meta.label}
+        </h2>
         <button type="button" onClick={onClose} aria-label="Close panel">
           ✕
         </button>
@@ -80,12 +141,9 @@ export function World({ data }: { data: WorldData }) {
   const gate = useDeviceGate();
   const [activeProp, setActiveProp] = useState<string | null>(null);
 
-  const reducedMotion = useMemo(
-    () =>
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-    [],
-  );
+  // Reactive: a useMemo with an empty dep array reads the preference once and
+  // never notices the user changing it mid-session.
+  const reducedMotion = useReducedMotion();
 
   const roomPosts = useMemo(
     () => data.posts.filter((p) => p.zone === 'room'),
@@ -110,8 +168,43 @@ export function World({ data }: { data: WorldData }) {
     return () => window.clearTimeout(t);
   }, [ready]);
 
+  // Remember which hotspot opened the panel so focus can go back to it.
+  // Closing otherwise destroys the focused element and drops focus to <body>,
+  // sending a keyboard user back to the top of the document.
+  const opener = useRef<string | null>(null);
+
   const open = useCallback((prop: string) => {
-    setActiveProp((cur) => (cur === prop ? null : prop));
+    setActiveProp((cur) => {
+      if (cur === prop) return null;
+      opener.current = prop;
+      return prop;
+    });
+  }, []);
+
+  const close = useCallback(() => {
+    setActiveProp(null);
+    const id = opener.current;
+    if (!id) return;
+    requestAnimationFrame(() => {
+      const btn = document.querySelector<HTMLButtonElement>(
+        `.hotspot-label[data-prop="${id}"]`,
+      );
+      btn?.focus();
+    });
+  }, []);
+
+  // A static greybox does not need to re-render 60 times a second forever.
+  // Stop the loop when the canvas scrolls out of view.
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [onScreen, setOnScreen] = useState(true);
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(([e]) => setOnScreen(e.isIntersecting), {
+      rootMargin: '120px',
+    });
+    io.observe(el);
+    return () => io.disconnect();
   }, []);
 
   if (gate.verdict === 'blocked') {
@@ -122,13 +215,21 @@ export function World({ data }: { data: WorldData }) {
           Everything in the room is on <a href="/room/">the reading list</a> —
           the world is a second way in, never the only one.
         </p>
+        {gate.canRetry && (
+          <p>
+            <button type="button" className="world-retry" onClick={gate.retry}>
+              Try the room anyway
+            </button>
+          </p>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="world-stage">
+    <div className="world-stage" ref={stageRef}>
       <Canvas
+        frameloop={onScreen ? 'always' : 'never'}
         // WebGL2 only. WebGPU stays an opt-in swap — see AGENTS.md rule 4.
         gl={{ antialias: true, powerPreference: 'high-performance' }}
         dpr={[1, 1.75]}
@@ -166,7 +267,7 @@ export function World({ data }: { data: WorldData }) {
       )}
 
       {activeProp && (
-        <Panel prop={activeProp} posts={roomPosts} onClose={() => setActiveProp(null)} />
+        <Panel prop={activeProp} posts={roomPosts} onClose={close} />
       )}
     </div>
   );

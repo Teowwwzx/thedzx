@@ -1,6 +1,6 @@
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
-import { World } from './World';
+import { World, WorldErrorBoundary } from './World';
 import type { WorldData } from './types';
 
 /**
@@ -16,5 +16,7 @@ export async function mount(container: HTMLElement) {
   if (!res.ok) throw new Error(`world.json responded ${res.status}`);
   const data: WorldData = await res.json();
 
-  createRoot(container).render(createElement(World, { data }));
+  createRoot(container).render(
+    createElement(WorldErrorBoundary, null, createElement(World, { data })),
+  );
 }

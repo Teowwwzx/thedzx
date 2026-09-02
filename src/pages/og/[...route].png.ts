@@ -4,8 +4,7 @@ import { allPosts } from '../../lib/posts';
 
 /**
  * Build-time Open Graph cards. Generated once at build and served as static
- * PNGs — nothing runs at request time, which is what keeps the site on
- * Cloudflare's free static-asset path.
+ * PNGs — nothing runs at request time, so nginx serves them straight off disk.
  *
  * NOTE: the default font is fetched from fontsource during the build, so the
  * build machine needs network access. Results are cached in

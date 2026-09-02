@@ -1,6 +1,10 @@
 import type { APIRoute } from 'astro';
 import { SITE, ZONES, ZONE_ORDER } from '../consts';
 import { allPosts } from '../lib/posts';
+// The world consumes this endpoint through WorldData. Importing the type here
+// makes the two sides break at COMPILE time if either drifts — the same class
+// of bug as the old hand-maintained ZONE_ORDER, caught the same way.
+import type { WorldData } from '../world/types';
 
 /**
  * THE CONTRACT between the blog and the 3D world.
@@ -15,7 +19,7 @@ import { allPosts } from '../lib/posts';
 export const GET: APIRoute = async () => {
   const posts = await allPosts();
 
-  const body = {
+  const body: WorldData = {
     version: 1,
     site: { title: SITE.title, url: SITE.url },
     generatedAt: new Date().toISOString(),
@@ -41,6 +45,7 @@ export const GET: APIRoute = async () => {
   // NOTE: with output:'static' this endpoint is prerendered to a file and only
   // the BODY is kept — response headers set here are silently discarded in
   // production (they work in `astro dev`, which is how you get fooled).
-  // Caching and content-type for /world.json live in public/_headers instead.
+  // Caching and content-type for /world.json live in the $thedzx_cache map in
+  // deploy/nginx-thedzx.site.conf instead.
   return new Response(JSON.stringify(body, null, 2));
 };

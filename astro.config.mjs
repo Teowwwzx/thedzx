@@ -11,9 +11,9 @@ import { SITE_URL } from './site.config.mjs';
 export default defineConfig({
   site: SITE_URL,
 
-  // Stage 0 is fully static. Keep it that way: static output is what makes
-  // Cloudflare Workers static-asset hosting free and unmetered, and what
-  // guarantees every post is real HTML before any JS runs.
+  // Fully static, and it stays that way. Static output is what guarantees
+  // every post is real HTML before any JS runs, and what lets nginx serve the
+  // whole site off disk with no runtime.
   output: 'static',
 
   // /blog/<slug>/ is the canonical shape in the plan. Directory format +

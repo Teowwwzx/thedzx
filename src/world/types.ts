@@ -1,4 +1,9 @@
-/** The shape /world.json publishes. Kept in step with src/pages/world.json.ts. */
+/**
+ * The shape /world.json publishes.
+ *
+ * src/pages/world.json.ts annotates its response with WorldData, so a change
+ * on either side is a type error rather than a silent runtime mismatch.
+ */
 export interface WorldPost {
   slug: string;
   url: string;

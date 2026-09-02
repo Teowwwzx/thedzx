@@ -25,6 +25,14 @@
   --code-bg: #1a2029;
   --code-ink: #d8dee8;
 
+  /* The 3D stage is a lit screen: it stays dark in both themes, so anything
+     drawn over it needs its own light-on-dark pair. Using --ink-2 here put
+     dark text on the dark canvas at 1.86:1 in light mode — the message shown
+     to every gated phone user was invisible. */
+  --world-bg: #10141b;
+  --world-ink: #dfe5ee;
+  --world-ink-2: #a4b0c2;
+
   --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-prose: ui-serif, Georgia, Cambria, "Times New Roman", serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
@@ -451,6 +459,10 @@ a.chip:hover { background: var(--accent-ink); color: var(--bg); }
 .world-enter:hover:not(:disabled) { background: var(--accent-soft); }
 .world-enter:disabled { cursor: progress; opacity: 0.75; }
 
+/* Enabled by the page script. Without this the primary CTA renders live and
+   clickable with JS disabled, and does nothing when pressed. */
+.world-enter[data-ready='no'] { cursor: not-allowed; opacity: 0.55; }
+
 .world-enter-main { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 
 .world-enter-sub {
@@ -465,7 +477,7 @@ a.chip:hover { background: var(--accent-ink); color: var(--bg); }
   border: 1px solid var(--line);
   border-radius: 4px;
   overflow: hidden;
-  background: #10141b;
+  background: var(--world-bg);
 }
 
 .world-stage {
@@ -473,6 +485,17 @@ a.chip:hover { background: var(--accent-ink); color: var(--bg); }
   width: 100%;
   /* Tall enough to read as a room, short enough to leave the page scrollable. */
   height: clamp(340px, 62vh, 640px);
+}
+
+/* A narrow viewport with a tall stage gives the camera an aspect near 0.7,
+   which forces it right back to fit the room's width and leaves big empty
+   bands above and below. A shorter stage on phones is a wider frame. */
+@media (max-width: 620px) {
+  .world-stage { height: clamp(260px, 42vh, 380px); }
+
+  /* Smaller labels leave more of the frame for the room itself. */
+  .hotspot-label { font-size: 9.5px; padding: 3px 6px; gap: 5px; letter-spacing: 0.05em; }
+  .hotspot-count { min-width: 13px; height: 13px; font-size: 9px; }
 }
 
 .world-stage canvas { display: block; touch-action: pan-y; }
@@ -523,8 +546,10 @@ a.chip:hover { background: var(--accent-ink); color: var(--bg); }
   inset: 0;
   display: grid;
   place-items: center;
-  background: #10141b;
-  color: #838ea1;
+  padding: 24px;
+  text-align: center;
+  background: var(--world-bg);
+  color: var(--world-ink-2);
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.14em;
@@ -532,9 +557,28 @@ a.chip:hover { background: var(--accent-ink); color: var(--bg); }
 
 .world-blocked {
   padding: 28px 24px;
-  color: var(--ink-2);
+  background: var(--world-bg);
+  color: var(--world-ink-2);
   font-size: 15px;
 }
+
+.world-blocked a { color: var(--accentWarm, #eda771); }
+
+.world-retry {
+  margin-top: 4px;
+  padding: 8px 14px;
+  border: 1px solid #eda771;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--world-ink);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.world-retry:hover { background: #eda771; color: var(--world-bg); }
+
+.world-loading a { color: #eda771; }
 
 .world-blocked p { margin: 0 0 10px; }
 .world-blocked p:last-child { margin: 0; }

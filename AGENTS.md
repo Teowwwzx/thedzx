@@ -29,10 +29,10 @@ The room is built from primitives — no models, no textures, nothing fetched.
 | `astro-og-canvas` | 0.13.1 | |
 | `@astrojs/check` | 0.9.10 | Peers `typescript ^5 \|\| ^6` — TypeScript 7 does NOT satisfy it |
 | `typescript` | 5.9.3 | Held below 7 by the line above |
-| `react` / `react-dom` | **must stay `>=19 <19.3`** when added | React Three Fiber 9.7's peer ceiling. React 19.3 will break the tree. |
-| `three` | 0.185.1 when added | |
-| `@react-three/fiber` | 9.7.0 when added | |
-| `@react-three/drei` | 10.7.8 when added | |
+| `react` / `react-dom` | **must stay `>=19 <19.3`**  | React Three Fiber 9.7's peer ceiling. React 19.3 will break the tree. |
+| `three` | 0.185.1  | |
+| `@react-three/fiber` | 9.7.0  | |
+| `@react-three/drei` | 10.7.8  | |
 
 **Never run a blanket `npm update`.** If a version needs to move, move it
 deliberately and re-run `npm run build && npm run budget`.
@@ -81,7 +81,7 @@ deliberately and re-run `npm run build && npm run budget`.
 
 **Fine to delegate:** the SSG and markdown pipeline, sitemap/RSS/OG plumbing,
 R3F scene-graph wiring, drei setup, gltf-transform build scripts, the budget
-gate, dispose/instancing refactors, the Worker proxy.
+gate, dispose/instancing refactors, the market-data proxy.
 
 **Do not delegate:** room layout and composition, colour and lighting mood,
 camera positions and easing, what feels fun — and all of the writing.
@@ -112,7 +112,8 @@ npm run dev       # drafts visible
 npm run build     # drafts excluded
 npm run check     # astro check — must stay at 0 errors
 npm run budget    # asset budget gate; FAILS if an article route ships JS
-npm run deploy    # build + wrangler deploy
+npm run deploy    # build, budget gate, rsync a release, flip the symlink
+./deploy/install-nginx.sh   # install the server block (rare, separate on purpose)
 ```
 
 ## Known sharp edges
