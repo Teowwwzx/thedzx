@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useMarketTicker } from './useMarketTicker';
 
 /**
  * The TV's focused state: a real TradingView chart, as DOM.
@@ -27,6 +28,7 @@ const SYMBOLS = [
 
 export function MarketPanel() {
   const host = useRef<HTMLDivElement>(null);
+  const ticker = useMarketTicker();
   const [symbol, setSymbol] = useState(SYMBOLS[0]);
   const [failed, setFailed] = useState(false);
 
@@ -54,20 +56,35 @@ export function MarketPanel() {
     script.onerror = () => setFailed(true);
     el.appendChild(script);
 
+    // The script is often allowed while the iframe it injects is blocked, in
+    // which case onerror never fires and the box just stays empty. Check for
+    // the iframe instead of trusting onerror alone.
+    const check = window.setTimeout(() => {
+      if (!el.querySelector('iframe')) setFailed(true);
+    }, 4000);
+
     return () => {
+      window.clearTimeout(check);
+      // Detach the script before wiping, so a still-loading script does not
+      // execute against a null parentNode and throw.
+      script.onerror = null;
+      script.remove();
       el.innerHTML = '';
     };
   }, [symbol]);
 
   return (
     <div className="market-panel">
-      <div className="market-tabs" role="tablist" aria-label="Market">
+      {/* Plain buttons, not role="tablist": there is no tabpanel, no
+          aria-controls and no roving tabindex here, and the arrow keys a
+          tablist implies are swallowed by the world's key handler anyway.
+          Announcing a pattern we do not implement is worse than none. */}
+      <div className="market-tabs" role="group" aria-label="Choose a market">
         {SYMBOLS.map((s) => (
           <button
             key={s.s}
             type="button"
-            role="tab"
-            aria-selected={s.s === symbol.s}
+            aria-pressed={s.s === symbol.s}
             className={s.s === symbol.s ? 'is-on' : undefined}
             onClick={() => setSymbol(s)}
           >
@@ -88,6 +105,14 @@ export function MarketPanel() {
       <p className="market-note">
         Quotes are <strong>delayed</strong>, not live. Charts by{' '}
         <a href="https://www.tradingview.com/" rel="noopener" target="_blank">TradingView</a>.
+        {/* CoinGecko's terms require this to be VISIBLE. It drives the screen
+            in the room, so it belongs wherever the TV is explained — it was
+            previously stored in the data and rendered nowhere at all. */}
+        {ticker.attribution && <> The screen in the room is {ticker.attribution}.</>}
+      </p>
+      <p className="market-note">
+        Opening this panel loads a chart from TradingView, which means your IP
+        address reaches them. Nothing else on the site does that.
       </p>
     </div>
   );

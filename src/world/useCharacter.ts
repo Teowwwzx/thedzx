@@ -55,6 +55,12 @@ export function useCharacter(
       else if (k === 'a' || k === 'arrowleft') keys.current.r = -1;
       else if (k === 'd' || k === 'arrowright') keys.current.r = 1;
       else return;
+
+      // Do not steal keys from anything the visitor is actually typing in,
+      // or from a focused control elsewhere on the page.
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+
       // Keyboard overrides any click-to-move already in flight.
       target.current.copy(position);
       e.preventDefault();
@@ -64,11 +70,21 @@ export function useCharacter(
       if (k === 'w' || k === 'arrowup' || k === 's' || k === 'arrowdown') keys.current.f = 0;
       if (k === 'a' || k === 'arrowleft' || k === 'd' || k === 'arrowright') keys.current.r = 0;
     };
+    // Losing focus mid-stride left the key held down and the character
+    // walking into a wall forever.
+    const release = () => {
+      keys.current.f = 0;
+      keys.current.r = 0;
+    };
     window.addEventListener('keydown', down);
     window.addEventListener('keyup', up);
+    window.addEventListener('blur', release);
+    document.addEventListener('visibilitychange', release);
     return () => {
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup', up);
+      window.removeEventListener('blur', release);
+      document.removeEventListener('visibilitychange', release);
     };
   }, [position]);
 
@@ -76,7 +92,11 @@ export function useCharacter(
     (x: number, z: number) => {
       keys.current.f = 0;
       keys.current.r = 0;
-      target.current.set(x, 0, z);
+      // Resolve the target the same way a step is resolved. Tapping inside a
+      // desk or beyond a wall used to set an unreachable goal: the character
+      // pressed against it forever, `moving` never went false, and the walk
+      // cycle ran for the rest of the session.
+      target.current.copy(resolveRef.current(scratchTarget.set(x, 0, z)));
     },
     [],
   );
@@ -105,6 +125,12 @@ export function useCharacter(
   );
 
   const scratch = useMemo(() => new Vector3(), []);
+  const scratchTarget = useMemo(() => new Vector3(), []);
+
+  // walkTo is created once but `resolve` changes with the location, so it is
+  // read through a ref rather than captured.
+  const resolveRef = useRef(resolve);
+  resolveRef.current = resolve;
 
   useFrame((_, rawDelta) => {
     const delta = Math.min(rawDelta, 0.05);

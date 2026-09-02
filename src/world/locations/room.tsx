@@ -1,5 +1,5 @@
 import { PALETTE } from '../palette';
-import { Box, Floor, Panel, WallWithHole, VOID_COLOR } from '../prims';
+import { Box, Floor, Glow, WallWithHole, VOID_COLOR } from '../prims';
 import { Skyline } from '../Skyline';
 import { TvScreen } from '../TvScreen';
 import type { LocationSpec } from './spec';
@@ -68,7 +68,7 @@ function Scenery() {
       <Box position={[-1.2, 0.82, -1.82]} size={[0.24, 0.1, 0.18]} color={PALETTE.deskLeg} />
       <Box position={[-1.2, 1.0, -1.82]} size={[0.06, 0.28, 0.06]} color={PALETTE.deskLeg} />
       <Box position={[-1.2, 1.32, -1.85]} size={[1.0, 0.6, 0.05]} color={PALETTE.tvBody} />
-      <Panel position={[-1.2, 1.32, -1.816]} size={[0.92, 0.52]} color={PALETTE.screen} />
+      <Glow position={[-1.2, 1.32, -1.816]} size={[0.92, 0.52]} color={PALETTE.screen} intensity={1.1} />
       <Box position={[-1.2, 0.79, -1.34]} size={[0.56, 0.02, 0.17]} color={PALETTE.crate} />
       <mesh position={[-0.6, 0.82, -1.38]}>
         <cylinderGeometry args={[0.05, 0.045, 0.11, 12]} />

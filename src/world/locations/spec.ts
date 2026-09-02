@@ -19,8 +19,6 @@ export interface DoorSpec {
   position: readonly [number, number, number];
   /** Where the character lands on arrival in the destination. */
   arriveAt: readonly [number, number];
-  /** Locked doors render but refuse, with this reason. */
-  lockedReason?: string;
 }
 
 export interface LocationSpec {
@@ -40,6 +38,12 @@ export interface LocationSpec {
    * character's pocket and the place reads as a corridor.
    */
   frameWidth: number;
+  /**
+   * NOTE: every location must be OPEN on +z — no wall between the player and
+   * the camera. The camera stands at target.z + 0.86 * distance with no
+   * occlusion test, so a near wall hides the player behind its outside face
+   * over roughly a third of the floor, arrival point included.
+   */
   /** The geometry. */
   Scenery: () => ReactNode;
 }

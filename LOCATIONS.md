@@ -1,37 +1,35 @@
 # Locations
 
-The scope guardrail. **No new location is started until the current one has
-five published posts behind it.** Never add a row to this table — the six
-zones below are the whole world.
+The six zones below are the whole world. There is never a seventh.
 
-| Zone | Stage | 3D status | Posts needed | Posts live | Drafts |
-|---|---|---|---|---|---|
-| The Room | 1 | **Greybox at `/world/`** | 5 | 0 | 1 |
-| The TV | 3 | Not started | — (live data, not posts) | — | — |
-| Outside | 4 | Not started | 5 | 0 | 0 |
-| The Gym | 4 | Not started | 5 | 0 | 1 |
-| Merdeka 118 | 5 | Not started | 5 | 0 | 1 |
-| The Server Room | 6 | Not started | 5 | 0 | 0 |
+| Zone | Built in 3D | Posts needed | Real posts | Placeholders |
+|---|---|---|---|---|
+| The Room | Yes | 5 | 0 | 6 |
+| Outside | Yes | 5 | 0 | 2 |
+| The Gym | Yes | 5 | 0 | 2 |
+| Merdeka 118 | Yes | 5 | 0 | 2 |
+| The Server Room | Yes | 5 | 0 | 1 |
+| The TV | n/a — live data, not a place | — | — | — |
 
-## Stage 1 status — greybox
+## The rule, and the override
 
-The room exists at `/world/`, built entirely from primitives: no models, no
-textures, no downloads. That is the plan working as intended — routing and
-interaction are wired against grey boxes *before* any asset is sourced, so the
-art bottleneck cannot stall the project.
+This file exists to say no. The rule was: **no new location until the current
+one has five published posts behind it**, because the engine becoming the
+hobby is the documented way projects like this die.
 
-Swapping greyboxes for CC0 kits changes `src/world/Room.tsx` geometry and
-nothing else. The hotspots, the panel, the device gate and the crawlable HUD
-are all asset-independent.
+**On 2 September 2026 the owner overrode it and asked for all stages at once.**
+That was his call and it is recorded here rather than quietly forgotten. The
+consequence is the row above: five locations built, **zero real posts** behind
+any of them. The thirteen placeholder files in `src/content/blog/` exist only
+so the world does not read as empty — they carry `placeholder: true`, stay out
+of the sitemap and the feed, and are `noindex`.
 
-**Posts live is 0 across the board.** The three files in `src/content/blog/`
-are all `draft: true` — one AI-written build log you need to make your own, and
-two skeletons. Nothing publishes until you flip a flag.
+The rule still stands for anything that comes next. The world is finished; the
+writing has not started.
 
-## Why this file exists
+## Deleting the placeholders
 
-The city-of-technologies and the day/night cycle are the fun part, and they
-will eat the project. This table is the thing that says no.
-
-Update the "Posts live" column when you publish. If a zone's 3D status moves
-ahead of its post count, you are building the wrong thing.
+```bash
+rm src/content/blog/ph-*.md
+```
+Nothing else references them.

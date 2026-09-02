@@ -9,7 +9,9 @@
     "preview": "astro preview",
     "check": "astro check",
     "deploy": "./deploy/deploy.sh",
-    "budget": "node scripts/check-budgets.mjs"
+    "budget": "node scripts/check-budgets.mjs",
+    "world": "node scripts/check-world.mjs",
+    "verify": "astro check && astro build && npm run world && npm run budget"
   },
   "dependencies": {
     "@astrojs/mdx": "8.0.0",

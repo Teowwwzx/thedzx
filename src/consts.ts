@@ -33,11 +33,21 @@ export interface Zone {
   blurb: string;
   /** Height above ground, for the world. Shown as a wayfinding detail. */
   elevation: string;
-  /** Objects in this zone a post may attach itself to, via `prop`. */
+  /**
+   * Objects in this zone a post may attach itself to, via `prop`.
+   *
+   * Every entry MUST have a matching hotspot in that zone's location, or a
+   * post attached to it is unreachable in the world with nothing to say so.
+   * `npm run world` fails the build if they drift apart.
+   */
   props: readonly string[];
   /** Which roadmap stage built this zone in 3D. */
   stage: number;
-  /** False for zones that are not a place you can stand (the TV). */
+  /**
+   * Is this a place you can stand? The TV is live data, not a location.
+   * This is the ONLY place that fact is recorded — src/world/locations
+   * derives its registry from it rather than keeping a second list.
+   */
   walkable?: boolean;
   /** Overrides the generic empty state. Used where posts aren't the point. */
   emptyState?: string;
@@ -54,7 +64,7 @@ export const ZONE_LIST = [
     label: 'The Room',
     blurb: 'IT knowledge, build logs, and code. The desk is where the work happens.',
     elevation: '0 m',
-    props: ['monitor', 'bookshelf', 'desk', 'window'],
+    props: ['monitor', 'bookshelf'],
     stage: 1,
   },
   {
@@ -63,7 +73,7 @@ export const ZONE_LIST = [
     label: 'Outside',
     blurb: 'The street, where every building is signed with the technology that runs it.',
     elevation: '0 m',
-    props: ['building', 'street', 'sign'],
+    props: ['building'],
     stage: 4,
   },
   {
@@ -72,7 +82,7 @@ export const ZONE_LIST = [
     label: 'The Gym',
     blurb: 'Discipline, habits, and the mindset that carries everything else.',
     elevation: '0 m',
-    props: ['rack', 'treadmill', 'bench', 'mat'],
+    props: ['rack', 'treadmill'],
     stage: 4,
   },
   {
@@ -82,11 +92,13 @@ export const ZONE_LIST = [
     blurb:
       'Level 116 you look outward — the macro view. Level 118 you look down — the micro view. The altitude is the argument.',
     elevation: '519 – 566 m',
-    props: ['window-116', 'window-118', 'elevator'],
+    props: ['window-116', 'window-118'],
     stage: 5,
   },
   {
     id: 'tv',
+    // Not a place you can stand: it is live market data on a screen.
+    walkable: false,
     label: 'The TV',
     blurb: 'Markets, watchlists, and whatever the tape is doing today. Delayed, always.',
     elevation: '0 m',
@@ -101,7 +113,7 @@ export const ZONE_LIST = [
     label: 'The Server Room',
     blurb: 'The thesis, the homelab, the infrastructure. Through the hatch behind the desk.',
     elevation: '−1 m',
-    props: ['rack', 'patch-panel'],
+    props: ['rack'],
     stage: 6,
   },
 ] as const satisfies readonly Zone[];

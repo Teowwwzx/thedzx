@@ -15,8 +15,9 @@ A personal blog that doubles as an explorable 3D world. **It is a blog with a
 3D navigation skin, not a 3D world containing text.** Every decision follows
 from that. See `LOCATIONS.md` for scope and the roadmap stages.
 
-Currently at **stage 1**: the blog, plus a greybox room at `/world/`.
-The room is built from primitives — no models, no textures, nothing fetched.
+**All stages are built.** `/` IS the world: a walkable five-location greybox
+built entirely from primitives. No models, no textures, nothing fetched for
+geometry. There is no landing page and no `/world/` route.
 
 ## Pinned versions — do not upgrade in passing
 
@@ -88,9 +89,12 @@ camera positions and easing, what feels fun — and all of the writing.
 
 ## The world (src/world/)
 
-- `/world/` is a normal server-rendered page. The 3D bundle is behind a
-  **dynamic `import()` fired by a click**, so the page itself ships ~1.2 KB of
-  JS and the canvas can never be the LCP element.
+- `/` is a normal server-rendered document that loads the world on arrival via
+  a **dynamic `import()`**, so the entry itself is ~2 KB and the canvas is
+  never the LCP element. There is no button — arriving is the game.
+- The entry is **wordless**. No hero, no nav, no HUD, no marker signage: a
+  label appears only when the player is close enough to act, or on keyboard
+  focus. Do not add explanatory copy to it.
 - React is a **library** here, not an Astro renderer. `@astrojs/react` is
   deliberately NOT installed — it injects a Fast Refresh preamble that a
   plain dynamic import cannot satisfy, which breaks dev. JSX compiles from
@@ -99,8 +103,13 @@ camera positions and easing, what feels fun — and all of the writing.
   Without it, dev pre-bundling hands R3F a second React and every hook throws.
 - Hotspot labels are drei `<Html>`, i.e. real DOM. Not `transform` mode, which
   is documented to render blurry. The canvas draws no text at all.
-- The section under the canvas mirrors every hotspot as a real `<a href>`.
-  It is not decoration — it is the only thing a crawler or screen reader sees.
+- The entry carries a **visually-hidden index** of the real pages, shown
+  full-size to anyone without JS or WebGL. A canvas has no text and no links,
+  so without it the site is a blank document to a crawler and unusable with a
+  screen reader. It is not decoration and it is not keyword stuffing — it
+  names the same places the world contains.
+- `npm run world` enforces the structure the type system cannot: every door
+  two-way and landing on walkable floor, every advertised prop reachable.
 - The device gate is a **runtime frame probe** (`FrameProbe.tsx`), not feature
   detection. `navigator.deviceMemory` and `connection.saveData` are undefined
   on iOS and in Firefox, so a `deviceMemory < 4` test fails OPEN there.
@@ -112,6 +121,8 @@ npm run dev       # drafts visible
 npm run build     # drafts excluded
 npm run check     # astro check — must stay at 0 errors
 npm run budget    # asset budget gate; FAILS if an article route ships JS
+npm run world     # world structure gate
+npm run verify    # all four, in order
 npm run deploy    # build, budget gate, rsync a release, flip the symlink
 ./deploy/install-nginx.sh   # install the server block (rare, separate on purpose)
 ```

@@ -1,3 +1,4 @@
+import { DoubleSide } from 'three';
 import { PALETTE } from './palette';
 
 /** Every piece of furniture in this world is one of these. */
@@ -6,19 +7,31 @@ export function Box({
   size,
   color,
   rotation,
+  opacity,
 }: {
   position: readonly [number, number, number];
   size: readonly [number, number, number];
   color: string;
   rotation?: readonly [number, number, number];
+  /** Below 1 the mesh stops writing depth, so what is behind it shows through. */
+  opacity?: number;
 }) {
+  const clear = opacity !== undefined && opacity < 1;
   return (
     <mesh
       position={position as [number, number, number]}
       rotation={rotation as [number, number, number] | undefined}
+      castShadow={!clear}
+      receiveShadow={!clear}
     >
       <boxGeometry args={size as [number, number, number]} />
-      <meshLambertMaterial color={color} flatShading />
+      <meshLambertMaterial
+        color={color}
+        flatShading
+        transparent={clear}
+        opacity={opacity ?? 1}
+        depthWrite={!clear}
+      />
     </mesh>
   );
 }
@@ -29,19 +42,28 @@ export function Panel({
   size,
   color,
   rotation,
+  opacity,
 }: {
   position: readonly [number, number, number];
   size: readonly [number, number];
   color: string;
   rotation?: readonly [number, number, number];
+  opacity?: number;
 }) {
+  const clear = opacity !== undefined && opacity < 1;
   return (
     <mesh
       position={position as [number, number, number]}
       rotation={rotation as [number, number, number] | undefined}
     >
       <planeGeometry args={size as [number, number]} />
-      <meshBasicMaterial color={color} />
+      <meshBasicMaterial
+        color={color}
+        transparent={clear}
+        opacity={opacity ?? 1}
+        depthWrite={!clear}
+        side={DoubleSide}
+      />
     </mesh>
   );
 }
@@ -57,10 +79,83 @@ export function Floor({
   position?: readonly [number, number, number];
 }) {
   return (
-    <mesh position={position as [number, number, number]} rotation={[-Math.PI / 2, 0, 0]}>
+    <mesh position={position as [number, number, number]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
       <planeGeometry args={size as [number, number]} />
       <meshLambertMaterial color={color} />
     </mesh>
+  );
+}
+
+/**
+ * A surface that emits light of its own — screens, signs, LEDs.
+ *
+ * meshLambertMaterial supports `emissive`, so a glowing panel costs no more
+ * than a flat one. Without this every screen in the world was the same
+ * brightness as the wall behind it.
+ */
+export function Glow({
+  position,
+  size,
+  color,
+  rotation,
+  intensity = 0.9,
+}: {
+  position: readonly [number, number, number];
+  size: readonly [number, number];
+  color: string;
+  rotation?: readonly [number, number, number];
+  intensity?: number;
+}) {
+  return (
+    <mesh
+      position={position as [number, number, number]}
+      rotation={rotation as [number, number, number] | undefined}
+    >
+      <planeGeometry args={size as [number, number]} />
+      <meshLambertMaterial color={color} emissive={color} emissiveIntensity={intensity} />
+    </mesh>
+  );
+}
+
+/**
+ * A floor with a rectangular opening, built from four rectangles.
+ *
+ * The tower's L118 window needs the floor to actually have a hole in it. A
+ * transparent pane laid ON a solid floor shows nothing, which is exactly how
+ * the whole city underneath ended up invisible while still being drawn.
+ */
+export function FloorWithHole({
+  span,
+  hole,
+  color,
+  y = 0,
+}: {
+  /** [minX, maxX, minZ, maxZ] */
+  span: readonly [number, number, number, number];
+  /** [minX, maxX, minZ, maxZ] */
+  hole: readonly [number, number, number, number];
+  color: string;
+  y?: number;
+}) {
+  const [x0, x1, z0, z1] = span;
+  const [hx0, hx1, hz0, hz1] = hole;
+  const parts: { cx: number; cz: number; w: number; d: number }[] = [
+    { cx: (x0 + hx0) / 2, cz: (z0 + z1) / 2, w: hx0 - x0, d: z1 - z0 },
+    { cx: (hx1 + x1) / 2, cz: (z0 + z1) / 2, w: x1 - hx1, d: z1 - z0 },
+    { cx: (hx0 + hx1) / 2, cz: (z0 + hz0) / 2, w: hx1 - hx0, d: hz0 - z0 },
+    { cx: (hx0 + hx1) / 2, cz: (hz1 + z1) / 2, w: hx1 - hx0, d: z1 - hz1 },
+  ];
+  return (
+    <>
+      {parts
+        .filter((p) => p.w > 0.001 && p.d > 0.001)
+        .map((p, i) => (
+          <mesh key={i} position={[p.cx, y, p.cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+            <planeGeometry args={[p.w, p.d]} />
+            <meshLambertMaterial color={color} />
+          </mesh>
+        ))}
+    </>
   );
 }
 

@@ -47,14 +47,28 @@ export function useMarketTicker(): Series {
           'https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1',
           { headers: { Accept: 'application/json' } },
         );
+        if (res.status === 429) {
+          // Honour the brush-off instead of retrying into it.
+          const retry = Number(res.headers.get('Retry-After')) || 120;
+          if (!cancelled) {
+            setSeries((cur) => ({ ...cur, status: 'Rate limited — retrying shortly' }));
+            window.setTimeout(() => { if (!cancelled) void load(); }, retry * 1000);
+          }
+          return;
+        }
         if (!res.ok) throw new Error(String(res.status));
         const json = (await res.json()) as { prices?: [number, number][] };
         const prices = (json.prices ?? []).map((p) => p[1]);
         if (cancelled || prices.length < 2) throw new Error('no data');
 
-        // ~60 points is plenty for a 512px sparkline.
+        // ~60 points is plenty for a 512px sparkline. The last sample is
+        // appended explicitly: plain modulo sampling drops the tail whenever
+        // the count is not divisible by the step, which made the headline
+        // price up to fifteen minutes staler than the data actually returned.
         const step = Math.max(1, Math.floor(prices.length / 60));
         const points = prices.filter((_, i) => i % step === 0);
+        const newest = prices[prices.length - 1];
+        if (points[points.length - 1] !== newest) points.push(newest);
         const first = points[0];
         const last = points[points.length - 1];
 
@@ -75,8 +89,11 @@ export function useMarketTicker(): Series {
     };
 
     load();
-    // CoinGecko's free tier is ~10k calls/month. Once every 5 minutes per
-    // open tab is far inside that and the chart is hourly anyway.
+    // The KEYLESS public endpoint is rate limited per IP (single-digit calls
+    // per minute), not by the Demo plan's monthly quota — that only applies
+    // once you send a key. One call every five minutes per tab is well
+    // inside it, but several tabs behind one NAT is not, so `load` backs off
+    // rather than hammering. days=1 returns roughly 5-minutely points.
     const id = window.setInterval(load, 5 * 60 * 1000);
     return () => {
       cancelled = true;

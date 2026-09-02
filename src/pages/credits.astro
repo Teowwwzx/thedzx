@@ -26,8 +26,11 @@ const manifest = (await import('../../assets/manifest.json')).default as {
     {
       manifest.assets.length === 0 ? (
         <p class="note">
-          No third-party assets yet — stage 0 is text only. The first entry
-          appears the day the first model is downloaded.
+          No third-party <em>models</em> yet — the world is built entirely from
+          primitives. The site does use two third-party data sources, both
+          credited where they appear: market data from CoinGecko drives the
+          screen in the room, and charts are by TradingView. Opening the TV
+          loads a script from TradingView, which means your IP reaches them.
         </p>
       ) : (
         <div class="table-scroll">

@@ -1,5 +1,5 @@
 import { PALETTE } from '../palette';
-import { Box, Floor, Panel } from '../prims';
+import { Box, Floor, Glow, Panel } from '../prims';
 import type { LocationSpec } from './spec';
 
 /**
@@ -21,9 +21,14 @@ function Scenery() {
   return (
     <>
       <Floor size={[34, 16]} color={PALETTE.road} position={[0, 0, 0]} />
-      {/* pavements */}
-      <Box position={[0, 0.08, -4.4]} size={[34, 0.16, 3.2]} color={PALETTE.kerb} />
-      <Box position={[0, 0.08, 4.4]} size={[34, 0.16, 3.2]} color={PALETTE.kerb} />
+      {/* Pavements, painted flat rather than raised. They used to be 0.16m
+          solid boxes with no collider, so the character walked buried to
+          mid-shin across half the street — including where two doors land
+          you. There is no ground-height system, so the ground stays flat. */}
+      <Panel position={[0, 0.012, -4.4]} size={[34, 3.2]} color={PALETTE.kerb} rotation={[-Math.PI / 2, 0, 0]} />
+      <Panel position={[0, 0.012, 4.4]} size={[34, 3.2]} color={PALETTE.kerb} rotation={[-Math.PI / 2, 0, 0]} />
+      <Panel position={[0, 0.02, -2.86]} size={[34, 0.1]} color={PALETTE.buildingTrim} rotation={[-Math.PI / 2, 0, 0]} />
+      <Panel position={[0, 0.02, 2.86]} size={[34, 0.1]} color={PALETTE.buildingTrim} rotation={[-Math.PI / 2, 0, 0]} />
       {/* centre line */}
       {Array.from({ length: 15 }, (_, i) => (
         <Panel
@@ -48,25 +53,27 @@ function Scenery() {
           <group key={b.label} position={[b.x, 0, -8.5]}>
             <Box position={[0, h / 2, 0]} size={[3, h, 5]} color={i % 2 ? PALETTE.buildingAlt : PALETTE.building} />
             {/* windows */}
-            {Array.from({ length: Math.floor(h / 1.3) }, (_, r) => (
-              <Panel
-                key={r}
-                position={[0, 0.9 + r * 1.3, 2.51]}
-                size={[2.1, 0.5]}
-                color={r % 3 === 0 ? PALETTE.screen : '#243040'}
-              />
-            ))}
+            {Array.from({ length: Math.floor(h / 1.3) }, (_, r) =>
+              (r + i) % 3 === 0 ? (
+                <Glow key={r} position={[0, 0.9 + r * 1.3, 2.51]} size={[2.1, 0.5]} color="#f0cf9a" intensity={0.55} />
+              ) : (
+                <Panel key={r} position={[0, 0.9 + r * 1.3, 2.51]} size={[2.1, 0.5]} color="#243040" />
+              ),
+            )}
             <Box position={[0, h + 0.28, 2.3]} size={[2.6, 0.56, 0.12]} color={b.color} />
           </group>
         );
       })}
 
-      {/* far side of the street */}
+      {/* Far side. These used to stand at z=+9 — between the camera and the
+          player — so the follow camera ended up inside them and the street
+          vanished entirely. They now sit well beyond where the camera ever
+          stands, and are lower. */}
       {[-10, -6, -2, 2, 6, 10].map((x, i) => (
         <Box
           key={x}
-          position={[x, 3 + (i % 2), 9]}
-          size={[3.4, 6 + (i % 2) * 2, 5]}
+          position={[x, 2.4 + (i % 2) * 0.6, 15.5]}
+          size={[3.4, 4.8 + (i % 2) * 1.2, 5]}
           color={i % 2 ? PALETTE.buildingAlt : PALETTE.building}
         />
       ))}
@@ -88,7 +95,7 @@ function Scenery() {
       </group>
 
       {/* the gym, across the road */}
-      <group position={[-2, 0, 8.5]}>
+      <group position={[-2, 0, 8.4]}>
         <Box position={[0, 2.2, 0]} size={[6, 4.4, 5]} color={PALETTE.buildingTrim} />
         <Box position={[0, 1.05, -2.55]} size={[1.3, 2.1, 0.2]} color={PALETTE.skirting} />
         <Panel position={[0, 1.05, -2.44]} size={[1.2, 2.0]} color="#1b2028" />
@@ -103,7 +110,9 @@ function Scenery() {
             <meshLambertMaterial color={PALETTE.deskLeg} flatShading />
           </mesh>
           <Box position={[0, 3.45, 0.35]} size={[0.3, 0.12, 0.8]} color={PALETTE.deskLeg} />
-          <Panel position={[0, 3.38, 0.35]} size={[0.26, 0.7]} color={PALETTE.accentWarm} rotation={[Math.PI / 2, 0, 0]} />
+          <Glow position={[0, 3.38, 0.35]} size={[0.26, 0.7]} color={PALETTE.accentWarm} rotation={[Math.PI / 2, 0, 0]} intensity={1.4} />
+          {/* a pool of light under each lamp */}
+          <Glow position={[0, 0.014, 0.3]} size={[2.6, 2.6]} color="#3a3a34" rotation={[-Math.PI / 2, 0, 0]} intensity={0.22} />
         </group>
       ))}
 
@@ -125,13 +134,14 @@ export const city: LocationSpec = {
   bounds: [-14.5, 14.5, -5.4, 5.4],
   spawn: [-7.5, 0],
   blockers: [
-    [-11.5, -8, 3.5, 2.5],
-    ...SIGNS.map((b) => [b.x, -8.5, 1.5, 2.5] as const),
-    [13.5, -3, 2, 2],
-    [-2, 8.5, 3, 2.5],
-    [0, 9, 17, 2.5],
-    // the lamp posts, which previously had no collider at all
-    ...[-10, -3, 4, 10].map((x) => [x, 4.0, 0.16, 0.16] as const),
+    // Only what the player can actually reach. The building rows sit well
+    // beyond the walkable band, so colliders on them could never fire —
+    // the bounds already do that job.
+    [-11.5, -5.8, 3.5, 0.5], // the block you came out of, at its near face
+    ...SIGNS.map((b) => [b.x, -6.2, 1.5, 0.4] as const), // shopfronts
+    [13.5, -3, 2, 2], // Merdeka 118's base
+    [-2, 5.9, 3, 0.5], // the gym frontage
+    ...[-10, -3, 4, 10].map((x) => [x, 4.0, 0.16, 0.16] as const), // lamp posts
   ],
   hotspots: [{ prop: 'building', label: 'The street', position: [-2, 3.2, -5.4] }],
   doors: [

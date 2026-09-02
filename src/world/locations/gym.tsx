@@ -1,5 +1,5 @@
 import { PALETTE } from '../palette';
-import { Box, Floor, Panel, WallWithHole } from '../prims';
+import { Box, Floor, Glow, Panel } from '../prims';
 import type { LocationSpec } from './spec';
 
 /** The Gym — discipline, habits, the mindset that carries everything else. */
@@ -34,14 +34,13 @@ function Scenery() {
       <Box position={[0, 1.6, -4.5]} size={[12, 3.2, 0.14]} color={PALETTE.wall} />
       <Box position={[-6, 1.6, 0]} size={[0.14, 3.2, 9]} color={PALETTE.wall} />
       <Box position={[6, 1.6, 0]} size={[0.14, 3.2, 9]} color={PALETTE.wall} />
-      <WallWithHole
-        axis="z"
-        at={4.5}
-        span={[-6, 6]}
-        height={3.2}
-        hole={{ a0: -0.65, a1: 0.65, y0: 0, y1: 2.1 }}
-        color={PALETTE.wall}
-      />
+      {/* Open on +z. A solid wall here would stand between the camera
+          and the player, hiding them behind its outside face over about
+          a third of the floor. What is left is a free-standing frame, so
+          the way out still reads as a door. */}
+      <Box position={[-0.73, 1.05, 4.5]} size={[0.16, 2.1, 0.16]} color={PALETTE.wall} />
+      <Box position={[0.73, 1.05, 4.5]} size={[0.16, 2.1, 0.16]} color={PALETTE.wall} />
+      <Box position={[0, 2.16, 4.5]} size={[1.62, 0.14, 0.16]} color={PALETTE.wall} />
 
       {/* mirror wall — a flat panel, not a real reflection: this is a greybox */}
       <Panel position={[-5.9, 1.7, 0]} size={[7.6, 2.2]} color="#54637a" rotation={[0, Math.PI / 2, 0]} />
@@ -78,7 +77,7 @@ function Scenery() {
         <Box position={[-0.36, 0.72, -0.7]} size={[0.07, 0.95, 0.07]} color={PALETTE.steel} />
         <Box position={[0.36, 0.72, -0.7]} size={[0.07, 0.95, 0.07]} color={PALETTE.steel} />
         <Box position={[0, 1.2, -0.72]} size={[0.8, 0.34, 0.08]} color={PALETTE.tvBody} />
-        <Panel position={[0, 1.2, -0.67]} size={[0.68, 0.26]} color={PALETTE.screen} />
+        <Glow position={[0, 1.2, -0.67]} size={[0.68, 0.26]} color={PALETTE.screen} intensity={1.0} />
       </group>
 
       {/* floor mat */}
@@ -89,7 +88,12 @@ function Scenery() {
         <cylinderGeometry args={[0.34, 0.34, 0.07, 20]} />
         <meshLambertMaterial color={PALETTE.steel} flatShading />
       </mesh>
-      <Panel position={[0, 2.5, -4.35]} size={[0.54, 0.54]} color="#e8eef6" />
+      {/* Round face on a round body. A 0.54 square overhung the 0.68 disc at
+          every corner and the clock read as a white square. */}
+      <mesh position={[0, 2.5, -4.35]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.27, 0.27, 0.02, 20]} />
+        <meshLambertMaterial color="#e8eef6" flatShading />
+      </mesh>
     </>
   );
 }
@@ -99,11 +103,14 @@ export const gym: LocationSpec = {
   bounds: [-5.8, 5.8, -4.3, 4.3],
   spawn: [0, 3.2],
   blockers: [
-    [-3, -2.5, 0.75, 0.9],
-    [0, -2.5, 0.75, 0.9],
-    [3.6, -3.9, 1.3, 0.5],
-    [2.6, 0.4, 0.4, 0.9],
-    [-3.4, 2.4, 0.55, 1.1],
+    // Sized to the geometry rather than padded. The old boxes claimed 7.4 m²
+    // of the 88 m² floor as invisible wall, 0.65 m of it directly behind
+    // each rack where a player would obviously try to stand.
+    [-3, -2.6, 0.62, 0.5],
+    [0, -2.6, 0.62, 0.5],
+    [3.6, -3.95, 1.2, 0.3],
+    [2.6, 0.4, 0.25, 0.78],
+    [-3.4, 2.35, 0.42, 0.98],
   ],
   hotspots: [
     { prop: 'rack', label: 'The rack', position: [-1.5, 2.1, -2.6] },

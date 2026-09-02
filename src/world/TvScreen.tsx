@@ -147,10 +147,19 @@ export function TvScreen({
     };
 
     draw();
-    // 4fps. Never in useFrame: a 512px upload every frame would cost more
-    // than the entire rest of the room.
-    const id = window.setInterval(draw, 250);
-    return () => window.clearInterval(id);
+    // 4fps, and only while the tab is actually being looked at. Never in
+    // useFrame: a 512px upload every frame would cost more than the entire
+    // rest of the room.
+    let id = window.setInterval(draw, 250);
+    const onVisibility = () => {
+      window.clearInterval(id);
+      if (document.visibilityState === 'visible') id = window.setInterval(draw, 250);
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [canvas, texture, series]);
 
   return (

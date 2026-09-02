@@ -1,24 +1,61 @@
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import type { Mesh, MeshBasicMaterial } from 'three';
+import { Color, Object3D, type InstancedMesh } from 'three';
 import { PALETTE } from '../palette';
-import { Box, Floor, Panel, WallWithHole } from '../prims';
+import { Box, Floor, Glow, Panel } from '../prims';
 import type { LocationSpec } from './spec';
 
 /** The Server Room — the thesis, the homelab, the infrastructure. */
-function Leds({ x, z, seed }: { x: number; z: number; seed: number }) {
-  const ref = useRef<Mesh>(null);
+
+const RACK_X = [-3, -1.4, 0.2, 1.8, 3.4];
+const ROWS = 9;
+
+/**
+ * Every LED in the room, as ONE instanced mesh.
+ *
+ * The first version was 90 separate meshes, each with its own geometry,
+ * material and useFrame subscription, and each parsing a CSS colour string
+ * from scratch on every frame. This is one draw call, one material, one
+ * callback, and three Color objects allocated once.
+ */
+function Leds() {
+  const ref = useRef<InstancedMesh>(null);
+  const dummy = useMemo(() => new Object3D(), []);
+  const colors = useMemo(
+    () => ({ on: new Color(PALETTE.led), warn: new Color(PALETTE.ledWarn), off: new Color('#1e2a30') }),
+    [],
+  );
+  const seeds = useMemo(() => {
+    const out: { x: number; y: number; z: number; seed: number }[] = [];
+    RACK_X.forEach((rx, r) => {
+      for (let i = 0; i < ROWS; i++) {
+        out.push({ x: rx - 0.28, y: 0.28 + i * 0.2, z: -1.74, seed: i + r * 1.7 });
+        out.push({ x: rx - 0.2, y: 0.28 + i * 0.2, z: -1.74, seed: i * 1.7 + r });
+      }
+    });
+    return out;
+  }, []);
+
   useFrame((state) => {
-    if (!ref.current) return;
-    const m = ref.current.material as MeshBasicMaterial;
-    const t = Math.sin(state.clock.elapsedTime * (2 + seed) + seed * 3);
-    m.color.set(t > 0.4 ? PALETTE.led : t < -0.7 ? PALETTE.ledWarn : '#1e2a30');
+    const mesh = ref.current;
+    if (!mesh) return;
+    const t = state.clock.elapsedTime;
+    seeds.forEach((led, i) => {
+      dummy.position.set(led.x, led.y, led.z);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+      const v = Math.sin(t * (2 + led.seed * 0.3) + led.seed * 3);
+      mesh.setColorAt(i, v > 0.4 ? colors.on : v < -0.7 ? colors.warn : colors.off);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   });
+
   return (
-    <mesh ref={ref} position={[x, 0, z]}>
+    <instancedMesh ref={ref} args={[undefined, undefined, seeds.length]}>
       <boxGeometry args={[0.05, 0.05, 0.02]} />
-      <meshBasicMaterial color={PALETTE.led} />
-    </mesh>
+      <meshBasicMaterial />
+    </instancedMesh>
   );
 }
 
@@ -27,12 +64,8 @@ function Rack({ x }: { x: number }) {
     <group position={[x, 0, -2.2]}>
       <Box position={[0, 1.05, 0]} size={[0.9, 2.1, 0.85]} color={PALETTE.rackMetal} />
       <Panel position={[0, 1.05, 0.431]} size={[0.78, 1.95]} color={PALETTE.rackFace} />
-      {Array.from({ length: 9 }, (_, i) => (
-        <group key={i} position={[0, 0.28 + i * 0.2, 0.44]}>
-          <Box position={[0, 0, 0]} size={[0.74, 0.15, 0.03]} color="#2f3540" />
-          <Leds x={-0.28} z={0.02} seed={i + x} />
-          <Leds x={-0.2} z={0.02} seed={i * 1.7 + x} />
-        </group>
+      {Array.from({ length: ROWS }, (_, i) => (
+        <Box key={i} position={[0, 0.28 + i * 0.2, 0.44]} size={[0.74, 0.15, 0.03]} color="#2f3540" />
       ))}
     </group>
   );
@@ -49,18 +82,18 @@ function Scenery() {
       <Box position={[0, 1.3, -3.5]} size={[9, 2.6, 0.14]} color="#272d36" />
       <Box position={[-4.5, 1.3, 0]} size={[0.14, 2.6, 7]} color="#272d36" />
       <Box position={[4.5, 1.3, 0]} size={[0.14, 2.6, 7]} color="#272d36" />
-      <WallWithHole
-        axis="z"
-        at={3.5}
-        span={[-4.5, 4.5]}
-        height={2.6}
-        hole={{ a0: -0.6, a1: 0.6, y0: 0, y1: 2 }}
-        color="#272d36"
-      />
+      {/* Open on +z. A solid wall here would stand between the camera
+          and the player, hiding them behind its outside face over about
+          a third of the floor. What is left is a free-standing frame, so
+          the way out still reads as a door. */}
+      <Box position={[-0.68, 1.05, 3.5]} size={[0.16, 2.1, 0.16]} color={"#272d36"} />
+      <Box position={[0.68, 1.05, 3.5]} size={[0.16, 2.1, 0.16]} color={"#272d36"} />
+      <Box position={[0, 2.16, 3.5]} size={[1.52, 0.14, 0.16]} color={"#272d36"} />
 
-      {[-3, -1.4, 0.2, 1.8, 3.4].map((x) => (
+      {RACK_X.map((x) => (
         <Rack key={x} x={x} />
       ))}
+      <Leds />
 
       {/* raised-floor grille, cable trays, and one lonely terminal */}
       {Array.from({ length: 5 }, (_, i) => (
@@ -79,7 +112,7 @@ function Scenery() {
         <Box position={[-0.5, 0.36, 0]} size={[0.06, 0.72, 0.55]} color={PALETTE.deskLeg} />
         <Box position={[0.5, 0.36, 0]} size={[0.06, 0.72, 0.55]} color={PALETTE.deskLeg} />
         <Box position={[0, 1.05, -0.2]} size={[0.7, 0.42, 0.04]} color={PALETTE.tvBody} />
-        <Panel position={[0, 1.05, -0.177]} size={[0.64, 0.36]} color="#1c3a2f" />
+        <Glow position={[0, 1.05, -0.177]} size={[0.64, 0.36]} color="#3fae86" intensity={0.9} />
       </group>
     </>
   );
@@ -90,7 +123,7 @@ export const server: LocationSpec = {
   bounds: [-4.3, 4.3, -3.3, 3.3],
   spawn: [0, 2.6],
   blockers: [
-    ...[-3, -1.4, 0.2, 1.8, 3.4].map((x) => [x, -2.2, 0.5, 0.45] as const),
+    ...RACK_X.map((x) => [x, -2.2, 0.5, 0.45] as const),
     [3.4, 1.9, 0.6, 0.35],
   ],
   hotspots: [{ prop: 'rack', label: 'The racks', position: [0.2, 2.35, -2.2] }],

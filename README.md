@@ -3,9 +3,12 @@
 A personal blog that doubles as an explorable 3D world — a room with a desk, a
 street outside, a gym, and the top floors of Merdeka 118.
 
-**Stage 1 is done:** the blog, plus a greybox room at `/world/`. Every post is
-real static HTML at a real URL first; the 3D world is a second way in, never
-the only one.
+**All stages are built.** Opening the site drops you into a walkable
+five-location world — a room, the street, a gym, the top of Merdeka 118 and
+the server room. There is no landing page: arriving is the game.
+
+Every post is still real static HTML at a real URL. The world is a second way
+in, never the only one.
 
 The full build plan, including the engine choice, asset sources, licensing
 traps and roadmap, lives in the design doc this repo was scaffolded from.
@@ -19,7 +22,7 @@ npm run dev      # drafts are visible here, and only here
 ```
 
 ```bash
-npm run build && npm run budget
+npm run verify   # astro check + build + world structure + asset budgets
 ```
 
 ## Before your first deploy
@@ -105,8 +108,10 @@ deploy/
   deploy.sh              Atomic release: rsync to releases/<ts>, flip symlink.
                          Does not touch nginx.
 scripts/
-  check-budgets.mjs      Asset budget gate — FAILS the build if an article
-                         route ships executable JS. Wired now, matters at stage 2.
+  check-budgets.mjs      Asset budget gate — FAILS if an article route ships
+                         executable JS, or the world bundle grows past budget.
+  check-world.mjs        Structural gate — every door two-way and landing on
+                         walkable floor, every advertised prop reachable.
 LOCATIONS.md             Scope guardrail. The thing that says no.
 AGENTS.md                Rules, pins, invariants.
 ```
@@ -126,26 +131,24 @@ certificate at `/etc/nginx/ssl/thedzx-origin.pem`; nginx rejects anything that
 did not come through Cloudflare. Because Cloudflare caches in front, purge it
 after a deploy if HTML looks stale.
 
-## Stage 1 — the room (greybox, shipped)
+## The world
 
-`/world/` is a fixed-camera room with four hotspots: desk, bookshelf, TV, and a
-visibly locked door. Click one and a panel lists that prop's posts as real
-links into the blog.
+`/` is the world itself, full screen, wordless. Five locations, all greybox:
+every object is a box, plane or cylinder generated in `src/world/locations/`.
+Nothing is downloaded — there is no .glb anywhere, so there is no asset budget
+to blow and no Blender step to get stuck in.
 
-**It contains no 3D assets.** Every object is a box, plane or cylinder with a
-flat colour, generated in `src/world/Room.tsx`. Nothing is downloaded, so there
-is no asset budget to blow and no Blender step to get stuck in. This is the
-plan's advice taken literally: wire the routing against grey boxes first.
+| | |
+|---|---|
+| Move | Tap the floor, or WASD |
+| Travel | Walk to a door marker and click it |
+| Read | Walk up to a marker; it names itself, and opens a panel of real links |
+| The TV | Delayed quotes. CoinGecko drives the in-world screen; TradingView opens as DOM on interact |
 
-The 3D bundle (~291 KB gzip) loads on click, never on page load. `/world/`
-itself ships about 2.4 KB of JS. Both numbers are enforced by
-`npm run budget`, so they cannot quietly drift — and both are gzip, because
-nginx serves gzip, not brotli.
+The 3D bundle (~299 KB gzip) loads on arrival via a dynamic import; the entry
+document itself is about 2 KB. Both numbers are enforced by `npm run budget`.
 
-### Next, in order
+**Swapping greybox for real models changes `src/world/locations/*.tsx` and
+nothing else.** The controller, camera, doors, panel and device gate are all
+asset-independent.
 
-1. **Write posts.** The door stays locked until this room has five.
-2. Swap greyboxes for real models — Kenney Furniture Kit (CC0) first. Only
-   `Room.tsx` geometry changes; hotspots, panel and gate are asset-independent.
-   Log every download in `assets/manifest.json` on the day you get it.
-3. Stage 2 makes it walkable.

@@ -1,5 +1,5 @@
 import { PALETTE } from '../palette';
-import { Box, Floor, Panel, WallWithHole, VOID_COLOR } from '../prims';
+import { Box, FloorWithHole, Panel, WallWithHole, VOID_COLOR } from '../prims';
 import type { LocationSpec } from './spec';
 
 /**
@@ -38,8 +38,8 @@ function CityBelow() {
             <meshBasicMaterial color={i % 2 ? PALETTE.cityNear : PALETTE.cityFar} />
           </mesh>
           <mesh position={[0, h / 2 + 0.02, 0]}>
-            <boxGeometry args={[1.5, 0.04, 1.5]} />
-            <meshBasicMaterial color={PALETTE.accent} />
+            <boxGeometry args={[1.5, 0.05, 1.5]} />
+            <meshBasicMaterial color={PALETTE.accentWarm} />
           </mesh>
         </group>
       ))}
@@ -57,7 +57,14 @@ function CityBelow() {
 function Scenery() {
   return (
     <>
-      <Floor size={[9, 8]} color={PALETTE.towerFloor} />
+      {/* The floor genuinely has a hole in it. A transparent pane laid on a
+          solid floor shows nothing — which is how the entire city below
+          ended up invisible while still being uploaded and rasterised. */}
+      <FloorWithHole
+        span={[-4.5, 4.5, -4, 4]}
+        hole={[-1.7, 1.7, 1.5, 3.7]}
+        color={PALETTE.towerFloor}
+      />
       <mesh position={[0, 3, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[9, 8]} />
         <meshLambertMaterial color={PALETTE.ceiling} />
@@ -72,13 +79,15 @@ function Scenery() {
         hole={{ a0: -3.2, a1: 3.2, y0: 0.35, y1: 2.5 }}
         color={PALETTE.towerWall}
       />
-      <Panel position={[0, 1.42, -4.02]} size={[6.4, 2.15]} color={PALETTE.glass} />
+      {/* Glazing, not a wall. At full opacity this sealed the opening to
+          within 5mm on every edge and hid the entire horizon behind it. */}
+      <Panel position={[0, 1.42, -4.02]} size={[6.4, 2.15]} color={PALETTE.glass} opacity={0.1} />
       {[-1.6, 0, 1.6].map((x) => (
         <Box key={x} position={[x, 1.42, -4.04]} size={[0.06, 2.15, 0.05]} color={PALETTE.skirting} />
       ))}
 
       {/* L118 — the micro window, in the FLOOR. You look down. */}
-      <Box position={[0, 0.02, 2.6]} size={[3.4, 0.04, 2.2]} color={PALETTE.glass} />
+      <Box position={[0, 0.02, 2.6]} size={[3.4, 0.04, 2.2]} color={PALETTE.glass} opacity={0.14} />
       <Box position={[-1.75, 0.06, 2.6]} size={[0.12, 0.12, 2.3]} color={PALETTE.steel} />
       <Box position={[1.75, 0.06, 2.6]} size={[0.12, 0.12, 2.3]} color={PALETTE.steel} />
       <Box position={[0, 0.06, 1.45]} size={[3.6, 0.12, 0.12]} color={PALETTE.steel} />
@@ -89,14 +98,13 @@ function Scenery() {
 
       <Box position={[-4.5, 1.5, 0]} size={[0.14, 3, 8]} color={PALETTE.towerWall} />
       <Box position={[4.5, 1.5, 0]} size={[0.14, 3, 8]} color={PALETTE.towerWall} />
-      <WallWithHole
-        axis="z"
-        at={4}
-        span={[-4.5, 4.5]}
-        height={3}
-        hole={{ a0: -0.7, a1: 0.7, y0: 0, y1: 2.1 }}
-        color={PALETTE.towerWall}
-      />
+      {/* Open on +z. A solid wall here would stand between the camera
+          and the player, hiding them behind its outside face over about
+          a third of the floor. What is left is a free-standing frame, so
+          the way out still reads as a door. */}
+      <Box position={[-0.78, 1.05, 4]} size={[0.16, 2.1, 0.16]} color={PALETTE.towerWall} />
+      <Box position={[0.78, 1.05, 4]} size={[0.16, 2.1, 0.16]} color={PALETTE.towerWall} />
+      <Box position={[0, 2.16, 4]} size={[1.72, 0.14, 0.16]} color={PALETTE.towerWall} />
 
       {/* the horizon beyond the macro window */}
       <mesh position={[0, 3, -22]}>
@@ -113,12 +121,18 @@ function Scenery() {
           <meshBasicMaterial color={i % 2 ? PALETTE.cityFar : PALETTE.cityNear} />
         </mesh>
       ))}
-      {/* shroud, so nothing shows above the wall */}
-      <Box position={[0, 9, -4.2]} size={[40, 12, 0.1]} color={VOID_COLOR} />
+      {/* Shroud. It previously started at y=3 and left the 46m-wide horizon
+          planes visible around both front corners, below the wall top. It now
+          wraps the whole opening: above, below, and down both sides. */}
+      <Box position={[0, 10, -4.2]} size={[60, 15, 0.1]} color={VOID_COLOR} />
+      <Box position={[0, -8, -4.2]} size={[60, 15, 0.1]} color={VOID_COLOR} />
+      <Box position={[-16.6, 1.5, -4.2]} size={[26, 32, 0.1]} color={VOID_COLOR} />
+      <Box position={[16.6, 1.5, -4.2]} size={[26, 32, 0.1]} color={VOID_COLOR} />
 
       {/* two plaques, which is where the argument lives */}
       <Box position={[-2.6, 1.15, -3.85]} size={[0.9, 0.24, 0.04]} color={PALETTE.accent} />
-      <Box position={[0, 1.0, 1.3]} size={[0.9, 0.04, 0.24]} color={PALETTE.accentWarm} rotation={[0, 0, 0]} />
+      {/* Set into the floor at the near lip of the window, not floating. */}
+      <Box position={[0, 0.045, 1.32]} size={[0.9, 0.03, 0.2]} color={PALETTE.accentWarm} />
 
       {/* a bench to sit and look */}
       <Box position={[0, 0.44, -2.6]} size={[2.4, 0.1, 0.45]} color={PALETTE.crate} />

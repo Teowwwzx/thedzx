@@ -43,9 +43,13 @@ export function Character({ moving, reducedMotion }: { moving: boolean; reducedM
       </group>
 
       {/* torso */}
-      <mesh position={[0, 0.75, 0]}>
+      <mesh position={[0, 0.75, 0]} castShadow>
         <boxGeometry args={[0.38, 0.56, 0.22]} />
         <meshLambertMaterial color={PALETTE.charShirt} flatShading />
+      </mesh>
+      <mesh position={[0, 1.02, 0]} castShadow>
+        <boxGeometry args={[0.4, 0.08, 0.24]} />
+        <meshLambertMaterial color={PALETTE.accent} flatShading />
       </mesh>
 
       {/* arms */}
@@ -63,15 +67,33 @@ export function Character({ moving, reducedMotion }: { moving: boolean; reducedM
       </group>
 
       {/* head */}
-      <mesh position={[0, 1.19, 0]}>
+      <mesh position={[0, 1.19, 0]} castShadow>
         <boxGeometry args={[0.25, 0.26, 0.24]} />
         <meshLambertMaterial color={PALETTE.charSkin} flatShading />
       </mesh>
-      {/* a fringe, so the front of the head is obvious and facing reads */}
-      <mesh position={[0, 1.29, -0.01]}>
-        <boxGeometry args={[0.27, 0.1, 0.26]} />
+      {/*
+        THE FACE POINTS +Z. This is load-bearing, not cosmetic.
+
+        useCharacter orients the rig with `atan2(vx, vz)`, which aims the
+        model's +Z axis along the direction of travel. The fringe used to sit
+        at -Z, so the face pointed backwards and the character walked
+        everywhere in reverse. If you re-model the head, keep the front on +Z.
+      */}
+      <mesh position={[0, 1.3, 0.02]}>
+        <boxGeometry args={[0.27, 0.09, 0.24]} />
         <meshLambertMaterial color={PALETTE.charHair} flatShading />
       </mesh>
+      <mesh position={[0, 1.24, 0.005]}>
+        <boxGeometry args={[0.26, 0.06, 0.25]} />
+        <meshLambertMaterial color={PALETTE.charHair} flatShading />
+      </mesh>
+      {/* eyes, so which way it faces is unmistakable at any distance */}
+      {[-0.055, 0.055].map((x) => (
+        <mesh key={x} position={[x, 1.19, 0.121]}>
+          <boxGeometry args={[0.035, 0.045, 0.01]} />
+          <meshBasicMaterial color="#20242c" />
+        </mesh>
+      ))}
     </group>
   );
 }
