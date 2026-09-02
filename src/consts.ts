@@ -35,8 +35,10 @@ export interface Zone {
   elevation: string;
   /** Objects in this zone a post may attach itself to, via `prop`. */
   props: readonly string[];
-  /** Which roadmap stage builds this zone in 3D. Stage 0 is text-only. */
+  /** Which roadmap stage built this zone in 3D. */
   stage: number;
+  /** False for zones that are not a place you can stand (the TV). */
+  walkable?: boolean;
   /** Overrides the generic empty state. Used where posts aren't the point. */
   emptyState?: string;
 }
@@ -48,6 +50,7 @@ export interface Zone {
 export const ZONE_LIST = [
   {
     id: 'room',
+    walkable: true,
     label: 'The Room',
     blurb: 'IT knowledge, build logs, and code. The desk is where the work happens.',
     elevation: '0 m',
@@ -56,6 +59,7 @@ export const ZONE_LIST = [
   },
   {
     id: 'city',
+    walkable: true,
     label: 'Outside',
     blurb: 'The street, where every building is signed with the technology that runs it.',
     elevation: '0 m',
@@ -64,6 +68,7 @@ export const ZONE_LIST = [
   },
   {
     id: 'gym',
+    walkable: true,
     label: 'The Gym',
     blurb: 'Discipline, habits, and the mindset that carries everything else.',
     elevation: '0 m',
@@ -72,6 +77,7 @@ export const ZONE_LIST = [
   },
   {
     id: 'tower',
+    walkable: true,
     label: 'Merdeka 118',
     blurb:
       'Level 116 you look outward — the macro view. Level 118 you look down — the micro view. The altitude is the argument.',
@@ -91,6 +97,7 @@ export const ZONE_LIST = [
   },
   {
     id: 'server',
+    walkable: true,
     label: 'The Server Room',
     blurb: 'The thesis, the homelab, the infrastructure. Through the hatch behind the desk.',
     elevation: '−1 m',

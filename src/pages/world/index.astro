@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { ZONES } from '../../consts';
-import { postsInZone, postUrl } from '../../lib/posts';
+import { ZONES, type ZoneId } from '../../consts';
+import { allPosts, postUrl } from '../../lib/posts';
 
 /**
  * The 3D room.
@@ -16,22 +16,17 @@ import { postsInZone, postUrl } from '../../lib/posts';
  * competing for one query is a duplicate-content problem, and the more useful
  * page — the readable one — should win it.
  */
-const zone = ZONES.room;
-const posts = await postsInZone('room');
-
-const onDesk = posts.filter((p) => p.data.prop === 'monitor').length;
-const onShelf = posts.filter((p) => p.data.prop === 'bookshelf').length;
-
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+const posts = await allPosts();
+const WALKABLE = ['room', 'city', 'gym', 'tower', 'server'] as const;
 
 const description =
-  'Walk into the room in 3D: a desk of IT writing, a bookshelf of essays, a TV showing the markets, and a door that is not open yet.';
+  'Walk the whole world in 3D: a room with a desk, the street outside, a gym, the top of Merdeka 118, and the server room under it all.';
 ---
 
-<BaseLayout title="Walk into the room" description={description} image="/og/zone/room.png" wide>
+<BaseLayout title="Walk the world" description={description} image="/og/zone/room.png" wide>
   <section class="world-intro">
-    <p class="label">{zone.elevation} · Stage 1 · Greybox</p>
-    <h1>Walk into the room</h1>
+    <p class="label">Five locations · Greybox · WebGL</p>
+    <h1>Walk the world</h1>
     <p class="world-lede">{description}</p>
 
     <!--
@@ -64,24 +59,25 @@ const description =
     section is what Google and a screen reader actually see. Do not delete it.
   -->
   <section class="world-index">
-    <h2 class="label">What's in here</h2>
+    <h2 class="label">Everywhere you can walk</h2>
     <ul class="world-index-list">
+      {
+        WALKABLE.map((id) => {
+          const z = ZONES[id as ZoneId];
+          const n = posts.filter((p) => p.data.zone === id).length;
+          return (
+            <li>
+              <strong>{z.label}</strong> — {z.blurb}{' '}
+              <a href={`/${id}/`}>
+                {n === 0 ? `Nothing published in ${z.label} yet` : n === 1 ? '1 post' : `${n} posts`}
+              </a>
+            </li>
+          );
+        })
+      }
       <li>
-        <strong>The desk</strong> — IT knowledge, build logs, code.{' '}
-        {plural(onDesk, 'post', 'posts')} sit on it.
-      </li>
-      <li>
-        <strong>The bookshelf</strong> — longer essays, one spine each.{' '}
-        {plural(onShelf, 'essay', 'essays')} on the shelf.
-      </li>
-      <li>
-        <strong>The TV</strong> — markets rather than posts.
-        <a href="/tv/">Wired up in stage 3</a>.
-      </li>
-      <li>
-        <strong>The door</strong> — locked. Outside, the gym and Merdeka 118
-        come after this room has five published posts behind it.
-        <a href="/">See the whole map</a>.
+        <strong>The TV</strong> — markets rather than posts. Delayed quotes,
+        charts by TradingView. <a href="/tv/">About the TV</a>.
       </li>
     </ul>
 
@@ -92,6 +88,7 @@ const description =
             <li>
               <a class="post-item" href={postUrl(post)}>
                 <p class="post-item-meta">
+                  <span class="chip ghost">{ZONES[post.data.zone as ZoneId].label}</span>
                   <span class="chip ghost">{post.data.prop}</span>
                 </p>
                 <h3 class="post-item-title">{post.data.title}</h3>
@@ -102,9 +99,8 @@ const description =
         </ul>
       ) : (
         <p class="note" style="margin-top:28px">
-          Nothing published in this room yet, so the desk and the shelf are
-          both empty in there too. <a href="/room/">The room's reading list</a>
-          is where posts appear first.
+          Nothing published anywhere yet, so every surface in there is empty
+          too. <a href="/">The map</a> is where posts appear first.
         </p>
       )
     }

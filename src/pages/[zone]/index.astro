@@ -45,12 +45,11 @@ const jsonLd = [
     </p>
 
     {
-      /* Only the room has been built in 3D so far. The link appears when a
-         zone's world exists, never before — a dead "coming soon" link is
-         worse than no link. */
-      zone === 'room' && (
+      /* The TV is live data rather than a place you stand, so it is the one
+         zone with no walkable counterpart. A dead link is worse than none. */
+      zone !== 'tv' && (
         <p style="margin:0">
-          <a class="chip" href="/world/">Walk into this room →</a>
+          <a class="chip" href="/world/">Walk into {z.label} →</a>
         </p>
       )
     }
