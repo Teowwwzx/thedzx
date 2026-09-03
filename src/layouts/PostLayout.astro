@@ -1,13 +1,12 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 import FormattedDate from '../components/FormattedDate.astro';
-import { SITE, ZONES, type ZoneId } from '../consts';
+import { SITE } from '../consts';
 import type { Post } from '../lib/posts';
 
 interface Props { post: Post; }
 const { post } = Astro.props;
-const { title, description, pubDate, updatedDate, zone, prop, tags, draft, placeholder } = post.data;
-const z = ZONES[zone as ZoneId];
+const { title, description, pubDate, updatedDate, tags, draft, placeholder } = post.data;
 
 const url = new URL(`/blog/${post.id}/`, Astro.site).toString();
 
@@ -26,7 +25,6 @@ const jsonLd = [
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     url,
     ...(tags.length ? { keywords: tags.join(', ') } : {}),
-    articleSection: z.label,
     inLanguage: SITE.locale,
   },
   {
@@ -34,8 +32,7 @@ const jsonLd = [
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: SITE.title, item: SITE.url },
-      { '@type': 'ListItem', position: 2, name: z.label, item: new URL(`/${zone}/`, Astro.site).toString() },
-      { '@type': 'ListItem', position: 3, name: title, item: url },
+      { '@type': 'ListItem', position: 2, name: title, item: url },
     ],
   },
 ];
@@ -53,7 +50,6 @@ const jsonLd = [
     <header style="margin-bottom:36px">
       <p class="post-item-meta" style="margin-bottom:12px">
         <FormattedDate date={pubDate} />
-        <a class="chip" href={`/${zone}/`}>{z.label}</a>
         {draft && <span class="chip ghost">Draft</span>}
       </p>
       <h1 style="font-size:clamp(29px,5.5vw,40px);margin-bottom:14px">{title}</h1>
@@ -70,9 +66,7 @@ const jsonLd = [
     <slot />
 
     <footer style="margin-top:56px;padding-top:24px;border-top:1px solid var(--line)">
-      <p class="label" style="margin:0 0 10px">
-        Zone: {z.label} · Prop: {prop} · Elevation {z.elevation}
-      </p>
+
       {
         tags.length > 0 && (
           <p style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px">
@@ -83,7 +77,7 @@ const jsonLd = [
         )
       }
       <p style="margin:0">
-        <a href={`/${zone}/`}>More from {z.label}</a> · <a href="/">All posts</a>
+        <a href="/">All posts</a>
       </p>
     </footer>
   </article>

@@ -1,24 +1,20 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostList from '../components/PostList.astro';
-import { SITE, ZONES, ZONE_ORDER } from '../consts';
+import { SITE } from '../consts';
 import { allPosts } from '../lib/posts';
 
 /**
  * The blog.
  *
- * The 3D world is ON HOLD, not deleted — everything for it is still in
- * `src/world/` and `src/world/locations/`. Nothing on the site loads it, so
- * it costs no bytes and ships no JavaScript. See LOCATIONS.md for how to put
- * it back.
+ * One big gesture and a lot of air. No topic taxonomy, no hero image, no
+ * cards — the reference sites this is modelled on (aardvarkbookclub.com,
+ * sharplink.com) get their presence almost entirely from type size,
+ * negative tracking and whitespace, not from decoration.
  *
- * This page is deliberately near-empty. There is nothing published yet, and
- * inventing filler to make it look busy would be worse than an honest blank.
+ * The 3D world is ON HOLD, not deleted. See LOCATIONS.md.
  */
 const posts = await allPosts();
-const counts = Object.fromEntries(
-  ZONE_ORDER.map((id) => [id, posts.filter((p) => p.data.zone === id).length]),
-);
 
 const jsonLd = [
   {
@@ -40,27 +36,12 @@ const jsonLd = [
     <p class="masthead-lede">{SITE.description}</p>
   </section>
 
-  <section style="margin-top:56px">
-    <h2 class="label" style="margin-bottom:8px">Writing</h2>
-    <PostList posts={posts} />
-  </section>
+  <hr class="rule rule-draw" style="margin-top:clamp(64px,14vh,140px)" />
 
-  <section style="margin-top:56px">
-    <h2 class="label" style="margin-bottom:16px">Topics</h2>
-    <ul class="topic-list">
-      {
-        ZONE_ORDER.map((id) => {
-          const n = counts[id] ?? 0;
-          return (
-            <li>
-              <a href={`/${id}/`}>
-                <span class="topic-name">{ZONES[id].label}</span>
-                <span class="topic-count tabular">{n}</span>
-              </a>
-            </li>
-          );
-        })
-      }
-    </ul>
+  <section class="reveal" style="margin-top:34px">
+    <p class="label" style="margin:0 0 6px">
+      {posts.length === 0 ? 'Writing' : `Writing — ${posts.length}`}
+    </p>
+    <PostList posts={posts} headingLevel={2} />
   </section>
 </BaseLayout>

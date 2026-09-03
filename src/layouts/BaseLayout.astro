@@ -32,5 +32,28 @@ const { wide = false, ...head } = Astro.props;
       </div>
     </main>
     <Footer />
+
+    <script is:inline>
+      (function () {
+        var btn = document.getElementById('theme-toggle');
+        if (!btn) return;
+        var root = document.documentElement;
+        btn.addEventListener('click', function () {
+          // Resolve what is actually on screen before flipping it — with no
+          // stored choice the theme comes from the OS, so toggling has to
+          // read the computed state rather than assume light.
+          var current =
+            root.dataset.theme ||
+            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          var next = current === 'dark' ? 'light' : 'dark';
+          root.dataset.theme = next;
+          try {
+            localStorage.setItem('thedzx:theme', next);
+          } catch (e) {
+            /* preference simply will not persist */
+          }
+        });
+      })();
+    </script>
   </body>
 </html>

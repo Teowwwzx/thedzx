@@ -44,7 +44,29 @@ const fullTitle = title === SITE.title ? title : `${title} — ${SITE.title}`;
   )
 }
 
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap"
+/>
+
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<meta name="color-scheme" content="light dark" />
+
+<script is:inline>
+  // Runs before the first paint: reading the stored choice here is what stops
+  // the page rendering in one theme and snapping to the other. It is the only
+  // JavaScript on the site.
+  (function () {
+    try {
+      var t = localStorage.getItem('thedzx:theme');
+      if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+    } catch (e) {
+      /* private windows throw on storage access; the OS preference still applies */
+    }
+  })();
+</script>
 <link rel="sitemap" href="/sitemap-index.xml" />
 <link
   rel="alternate"

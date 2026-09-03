@@ -20,10 +20,13 @@ const blog = defineCollection({
     updatedDate: z.coerce.date().optional(),
 
     // The binding to the world. See src/consts.ts.
-    // ZONE_IDS is a non-empty tuple of the literal ids, so data.zone types as
-    // ZoneId — not string. That keeps ZONES[zone] checked at every call site.
-    zone: z.enum(ZONE_IDS),
-    prop: z.string().min(1),
+    /**
+     * Only the parked 3D world uses these. The site itself has no topic
+     * taxonomy — the zone names were the world's places, and they read as
+     * nonsense on a blog. Optional so a post never has to pick one.
+     */
+    zone: z.enum(ZONE_IDS).optional(),
+    prop: z.string().min(1).optional(),
 
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),

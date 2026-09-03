@@ -1,21 +1,19 @@
 ---
-import { SITE, ZONES, ZONE_ORDER } from '../consts';
-
-const path = Astro.url.pathname;
-const isCurrent = (href: string) => (path === href ? 'page' : undefined);
+import { SITE } from '../consts';
 ---
 
 <header class="site-header">
   <div class="shell wide bar">
     <a class="brand" href="/">{SITE.title}</a>
-    <nav class="site-nav" aria-label="Zones">
-      {
-        ZONE_ORDER.map((id) => (
-          <a href={`/${id}/`} aria-current={isCurrent(`/${id}/`)}>
-            {ZONES[id].label}
-          </a>
-        ))
-      }
-    </nav>
+
+    <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Switch colour theme">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" class="icon-sun">
+        <circle cx="12" cy="12" r="4.2" />
+        <path d="M12 2.5v2.2M12 19.3v2.2M4.2 12H2M22 12h-2.2M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6" />
+      </svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" class="icon-moon">
+        <path d="M20 14.5A8.2 8.2 0 0 1 9.5 4a8.3 8.3 0 1 0 10.5 10.5z" />
+      </svg>
+    </button>
   </div>
 </header>

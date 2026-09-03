@@ -31,13 +31,16 @@ export const GET: APIRoute = async () => {
       props: ZONES[id].props,
       stage: ZONES[id].stage,
     })),
-    posts: posts.map((post) => ({
+    // Only posts that opted into a place can appear in the world.
+    posts: posts
+      .filter((post) => post.data.zone && post.data.prop)
+      .map((post) => ({
       slug: post.id,
       url: `/blog/${post.id}/`,
       title: post.data.title,
       teaser: post.data.description,
-      zone: post.data.zone,
-      prop: post.data.prop,
+      zone: post.data.zone!,
+      prop: post.data.prop!,
       pubDate: post.data.pubDate.toISOString().slice(0, 10),
     })),
   };
