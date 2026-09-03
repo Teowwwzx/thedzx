@@ -11,8 +11,9 @@
     "deploy": "./deploy/deploy.sh",
     "budget": "node scripts/check-budgets.mjs",
     "world": "node scripts/check-world.mjs",
-    "verify": "astro check && astro build && npm run world && npm run palette && npm run budget",
-    "palette": "node scripts/check-palette.mjs"
+    "verify": "astro check && astro build && npm run world && npm run palette && npm run framing && npm run budget",
+    "palette": "node scripts/check-palette.mjs",
+    "framing": "node scripts/check-framing.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "8.0.0",

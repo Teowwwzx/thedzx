@@ -48,6 +48,7 @@ import {
   rack,
   setNeutralTheme,
   tower,
+  type Extent,
   type Palette,
 } from './objects';
 
@@ -67,7 +68,7 @@ export interface Link {
 
 type Builder = (p: Palette) => Group;
 
-interface Slot {
+export interface Slot {
   build: Builder;
   /** Palette index. Used only when no post is bound to this slot. */
   hue: number;
@@ -85,15 +86,38 @@ interface Slot {
   tilt: [number, number, number];
 }
 
-const FOV = 38;
-const CAM_Z = 9;
+export const FOV = 38;
+export const CAM_Z = 9;
 
 /** Matches the breakpoint in global.css, where the stage becomes a band. */
-const NARROW = 700;
+export const NARROW = 700;
 
 /** How much an object grows and rises when the pointer is on it. */
-const HOVER_SCALE = 1.14;
-const HOVER_LIFT = 0.05;
+export const HOVER_SCALE = 1.14;
+export const HOVER_LIFT = 0.05;
+
+/* --- scroll ---------------------------------------------------------------
+ * Scrolling drives the band as well as passing it. Three separate things,
+ * because one of them alone reads as a glitch rather than as a response:
+ *
+ *   DRIFT     objects shear apart vertically by depth — near ones rise, far
+ *             ones sink — so the band gains a third dimension exactly when
+ *             you are moving past it.
+ *   TURN      the whole set rotates with scroll position, like a turntable.
+ *   MOMENTUM  scroll VELOCITY adds a decaying spin, so a flick sets them
+ *             tumbling and a slow drag barely moves them. This is the part
+ *             that feels like the page answering you rather than animating.
+ *
+ * Progress is measured from the top of the document, NOT from the band's
+ * position in the viewport: at rest the objects then sit exactly where the
+ * slot table puts them, and every effect grows from zero as you scroll.
+ */
+export const SCROLL_SPAN = 0.9;
+export const SCROLL_MAX = 1.4;
+export const SCROLL_DRIFT = 0.08;
+export const SCROLL_TURN = 0.9;
+/** Deepest slot, for normalising depth into a -1..1 shear factor. */
+export const DEPTH_SCALE = 1.4;
 
 /**
  * Slots are in LEFT-TO-RIGHT order, and posts are bound to them in list
@@ -101,14 +125,14 @@ const HOVER_LIFT = 0.05;
  * same direction as the list under it. Reordering this array silently
  * reorders the links.
  */
-const WIDE: Slot[] = [
+export const WIDE: Slot[] = [
   { build: floppy,   hue: 1, ndc: [-0.82,  0.36], depth: -1.0, size: 0.70, spin: [0.16, 0.05], bob: [0.06, 7.3], tilt: [0.22, -0.5, 0.15] },
   { build: dumbbell, hue: 3, ndc: [-0.54, -0.42], depth:  0.4, size: 0.80, spin: [0.11, 0.08], bob: [0.07, 9.1], tilt: [0.35, 0.4, -0.25] },
   { build: laptop,   hue: 5, ndc: [-0.13,  0.16], depth:  1.0, size: 1.05, spin: [0.09, 0.03], bob: [0.05, 8.2], tilt: [0.5, 0.6, 0.05] },
-  { build: mug,      hue: 6, ndc: [ 0.24, -0.50], depth:  1.3, size: 0.56, spin: [0.19, 0.02], bob: [0.07, 6.4], tilt: [0.15, 0, 0.1] },
+  { build: mug,      hue: 6, ndc: [ 0.24, -0.42], depth:  1.3, size: 0.56, spin: [0.19, 0.02], bob: [0.07, 6.4], tilt: [0.15, 0, 0.1] },
   { build: keyboard, hue: 2, ndc: [ 0.44,  0.44], depth: -0.4, size: 0.82, spin: [0.13, 0.04], bob: [0.05, 10.4], tilt: [0.6, -0.3, -0.1] },
   { build: rack,     hue: 4, ndc: [ 0.70, -0.26], depth:  0.2, size: 0.92, spin: [0.10, 0.02], bob: [0.05, 8.8], tilt: [0.12, -0.5, 0.05] },
-  { build: tower,    hue: 0, ndc: [ 0.86,  0.22], depth: -1.4, size: 1.10, spin: [0.12, 0.01], bob: [0.04, 11.2], tilt: [0.06, 0.2, 0.1] },
+  { build: tower,    hue: 0, ndc: [ 0.86,  0.16], depth: -1.4, size: 1.02, spin: [0.12, 0.01], bob: [0.04, 11.2], tilt: [0.06, 0.2, 0.1] },
 ];
 
 /**
@@ -116,8 +140,8 @@ const WIDE: Slot[] = [
  * same spacing would overlap into mush — and every one of them is a draw
  * call on the device least able to afford it. Left-to-right, same as above.
  */
-const NARROW_SLOTS: Slot[] = [
-  { build: phone,  hue: 1, ndc: [-0.86, -0.46], depth: -0.3, size: 0.62, spin: [0.21, 0.06], bob: [0.08, 5.8], tilt: [0.18, 0.3, -0.22] },
+export const NARROW_SLOTS: Slot[] = [
+  { build: phone,  hue: 1, ndc: [-0.86, -0.38], depth: -0.3, size: 0.62, spin: [0.21, 0.06], bob: [0.08, 5.8], tilt: [0.18, 0.3, -0.22] },
   { build: laptop, hue: 5, ndc: [-0.38,  0.22], depth:  0.5, size: 1.00, spin: [0.09, 0.03], bob: [0.05, 8.2], tilt: [0.5, 0.6, 0.05] },
   { build: rack,   hue: 4, ndc: [ 0.36, -0.20], depth:  0.1, size: 0.90, spin: [0.10, 0.02], bob: [0.06, 8.8], tilt: [0.12, -0.5, 0.05] },
   { build: mug,    hue: 6, ndc: [ 0.76,  0.40], depth:  0.9, size: 0.52, spin: [0.19, 0.02], bob: [0.08, 6.4], tilt: [0.15, 0, 0.1] },
@@ -143,6 +167,46 @@ function paletteFor(index: number, dark: boolean): Palette {
   };
 }
 
+/** Half-height of the frustum at a given world z. */
+export const halfHeightAt = (z: number) =>
+  Math.tan(MathUtils.degToRad(FOV) / 2) * (CAM_Z - z);
+
+/**
+ * Where an object sits, and how big.
+ *
+ * Module scope, exported, and called by BOTH layout() and
+ * scripts/check-framing.mjs — the gate has to exercise this arithmetic, not
+ * a copy of it. A gate that reimplements the thing it checks passes happily
+ * while the shipped code is wrong, which is the failure mode this whole file
+ * keeps running into.
+ *
+ * The clamp is what keeps an object inside the band. Its budget has to cover
+ * every way the object moves after this runs: the bob, the hover lift, the
+ * hover growth and the scroll drift — see draw().
+ *
+ * The vertical bound is the object's REAL half-extent, not half its longest
+ * side. A sphere bound reserves nearly twice the room a laptop needs, and on
+ * a 210px band that slack is the difference between objects that can move
+ * and objects pinned to the middle.
+ */
+export function placeSlot(slot: Slot, extent: Extent, aspect: number) {
+  const half = halfHeightAt(slot.depth);
+  const scale = slot.size * half;
+  // The wobble is about X, which rotates Z into view, so the worst case is
+  // the larger of the two.
+  const reach = 0.5 * Math.max(extent.y, extent.z) * scale * HOVER_SCALE;
+  const headroom = 1 - slot.bob[0] - HOVER_LIFT - SCROLL_DRIFT * SCROLL_MAX;
+  const limit = Math.max(0, half * headroom - reach);
+  return {
+    half,
+    scale,
+    reach,
+    limit,
+    x: slot.ndc[0] * half * aspect,
+    baseY: MathUtils.clamp(slot.ndc[1] * half, -limit, limit),
+  };
+}
+
 function prefersDark(): boolean {
   const t = document.documentElement.dataset.theme;
   if (t === 'dark') return true;
@@ -161,6 +225,8 @@ interface Placed {
   baseY: number;
   /** World scale at rest, before any hover growth. */
   restScale: number;
+  /** Normalised dimensions, from normalise(). Used to bound it tightly. */
+  extent: Extent;
   /** 0 → 1, eased. Drives the lift and the growth. */
   hover: number;
 }
@@ -213,10 +279,6 @@ export function mount(host: HTMLElement, links: Link[] = []): (() => void) | nul
   /** Which theme the current objects were built for. */
   let builtDark: boolean | null = null;
 
-  /** Half-height of the frustum at a given world z. */
-  const halfHeightAt = (z: number) =>
-    Math.tan(MathUtils.degToRad(FOV) / 2) * (CAM_Z - z);
-
   const swatchIndex = (name: string) => SWATCHES.findIndex((s) => s.name === name);
 
   function build(slots: Slot[], dark: boolean) {
@@ -236,7 +298,8 @@ export function mount(host: HTMLElement, links: Link[] = []): (() => void) | nul
       const object = slot.build(paletteFor(named >= 0 ? named : slot.hue, dark));
       object.rotation.set(slot.tilt[0], slot.tilt[1], slot.tilt[2]);
       scene.add(object);
-      return { slot, object, link, half: 1, baseY: 0, restScale: 1, hover: 0 };
+      const extent = (object.userData.extent as Extent | undefined) ?? { x: 1, y: 1, z: 1 };
+      return { slot, object, link, half: 1, baseY: 0, restScale: 1, extent, hover: 0 };
     });
     slotsInUse = slots;
     builtDark = dark;
@@ -269,21 +332,13 @@ export function mount(host: HTMLElement, links: Link[] = []): (() => void) | nul
       // Scale against the half-height AT THIS OBJECT'S DEPTH, not at z = 0.
       // Then `size` means the same fraction of the visible band for every
       // object, and depth buys parallax without quietly changing framing.
-      const half = halfHeightAt(p.slot.depth);
-      const scale = p.slot.size * half;
-      p.object.scale.setScalar(scale);
-      p.half = half;
-      p.restScale = scale;
-
-      // normalise() fits each object into a unit cube, so half its longest
-      // side is the worst-case radius. Keeping that inside the band — bob
-      // AND the hover growth included — is what stops an object being sliced
-      // by the canvas edge at an aspect ratio nobody tested.
-      const headroom = 1 - p.slot.bob[0] - HOVER_LIFT;
-      const limit = Math.max(0, half * headroom - (scale * HOVER_SCALE) / 2);
-      p.baseY = MathUtils.clamp(p.slot.ndc[1] * half, -limit, limit);
-
-      p.object.position.set(p.slot.ndc[0] * half * camera.aspect, p.baseY, p.slot.depth);
+      // `npm run framing` checks this same call over 18 viewport sizes.
+      const at = placeSlot(p.slot, p.extent, camera.aspect);
+      p.object.scale.setScalar(at.scale);
+      p.half = at.half;
+      p.restScale = at.scale;
+      p.baseY = at.baseY;
+      p.object.position.set(at.x, at.baseY, p.slot.depth);
     }
     return true;
   }
@@ -328,6 +383,28 @@ export function mount(host: HTMLElement, links: Link[] = []): (() => void) | nul
   let pressed = false;
   let pressX = 0;
   let pressY = 0;
+
+  /*
+   * Scroll is sampled in a listener, not read inside the frame.
+   *
+   * A scroll handler runs while layout is still clean, so window.scrollY is
+   * free there. Reading it inside draw() — after placeLabel() has written
+   * style.left and style.top — would force a synchronous layout on every
+   * single frame, which is the one performance mistake a decorative canvas
+   * really cannot afford.
+   */
+  let scrollY = window.scrollY;
+  let lastScrollY = scrollY;
+  let viewportH = window.innerHeight;
+  /** Decaying angular impulse from scroll velocity. */
+  let momentum = 0;
+
+  const onScroll = () => {
+    scrollY = window.scrollY;
+    // Sampled here for the same reason as scrollY: layout is clean inside a
+    // scroll handler, and the band's own height is 34vh, so this changes.
+    viewportH = window.innerHeight;
+  };
 
   function toNdc(e: { clientX: number; clientY: number }) {
     const r = host.getBoundingClientRect();
@@ -388,6 +465,11 @@ export function mount(host: HTMLElement, links: Link[] = []): (() => void) | nul
       label.dataset.shown = 'true';
     } else {
       delete label.dataset.shown;
+      // Cleared, not just hidden. A faded-out element holding the title of
+      // whatever you last pointed at is stale state waiting to be read by
+      // something — and it is how a measurement of this very function
+      // reported seven objects stacked on top of each other.
+      label.textContent = '';
     }
     return true;
   }
@@ -422,6 +504,19 @@ export function mount(host: HTMLElement, links: Link[] = []): (() => void) | nul
       if (updateHover()) draw(lastT);
       else placeLabel();
     }
+  }
+
+  /**
+   * The browser takes the pointer to scroll the page and sends
+   * pointercancel — never pointerup, and never a click. Clearing `pressed`
+   * here keeps a scroll that happened to start on an object from being
+   * mistaken for a press that is still in progress.
+   */
+  function onPointerCancel() {
+    pressed = false;
+    pointerInside = false;
+    ndc.set(-2, -2);
+    if (!running && updateHover()) draw(lastT);
   }
 
   function onPointerLeave() {
@@ -487,6 +582,40 @@ export function mount(host: HTMLElement, links: Link[] = []): (() => void) | nul
     const seconds = t / 1000;
     const still = motionQuery.matches;
 
+    /*
+     * How far down the page we are, 0 at the top. Reduced motion pins it to
+     * zero rather than freezing it wherever the visitor happened to be:
+     * frozen mid-effect is a broken-looking layout, not a still one.
+     */
+    const progress = still
+      ? 0
+      : MathUtils.clamp(scrollY / (Math.max(1, viewportH) * SCROLL_SPAN), 0, SCROLL_MAX);
+
+    /*
+     * Momentum is integrated ONLY inside the running loop.
+     *
+     * A still redraw — a hover change while the band is paused — has no
+     * elapsed time, so decaying by dt = 0 would leave a spin frozen at full
+     * strength forever, and integrating velocity outside a frame would let
+     * it build up while nothing is being drawn. Neither is a spin; both are
+     * stuck state.
+     *
+     * Frames, not milliseconds, but MEASURED: the spin then decays at the
+     * same rate on a 120Hz display as on a 60Hz one instead of dying twice
+     * as fast.
+     */
+    if (still) {
+      momentum = 0;
+    } else if (running) {
+      const dt = MathUtils.clamp((t - prevT) / 16.67, 0, 6);
+      // Velocity, not position. A flick throws them; a slow drag does not.
+      momentum += (scrollY - lastScrollY) * 0.0016;
+      momentum *= Math.pow(0.93, dt);
+      if (Math.abs(momentum) < 0.0002) momentum = 0;
+      lastScrollY = scrollY;
+    }
+    prevT = t;
+
     for (const p of placed) {
       const target = p === hovered ? 1 : 0;
       // Reduced motion gets the state, not the transition.
@@ -496,12 +625,22 @@ export function mount(host: HTMLElement, links: Link[] = []): (() => void) | nul
         ? 0
         : Math.sin((seconds / p.slot.bob[1]) * Math.PI * 2 + p.slot.hue) * p.slot.bob[0] * p.half;
 
-      p.object.position.y = p.baseY + bobOffset + p.hover * HOVER_LIFT * p.half;
+      // Near objects rise, far ones sink: the band shears open by depth as
+      // it goes past. Bounded by SCROLL_DRIFT * SCROLL_MAX, which layout()
+      // has already taken out of the clamp's budget.
+      const shear = (p.slot.depth / DEPTH_SCALE) * progress * SCROLL_DRIFT * p.half;
+
+      p.object.position.y = p.baseY + bobOffset + shear + p.hover * HOVER_LIFT * p.half;
       p.object.scale.setScalar(p.restScale * (1 + (HOVER_SCALE - 1) * p.hover));
 
       if (!still) {
-        p.object.rotation.y = p.slot.tilt[1] + seconds * p.slot.spin[0];
-        p.object.rotation.x = p.slot.tilt[0] + Math.sin(seconds * p.slot.spin[1] * 3) * 0.14;
+        // A lighter object takes more of the flick, which is what makes the
+        // set read as seven separate things rather than one rotating rig.
+        const heft = 0.5 + p.slot.spin[0] * 3;
+        p.object.rotation.y =
+          p.slot.tilt[1] + seconds * p.slot.spin[0] + progress * SCROLL_TURN + momentum * heft;
+        p.object.rotation.x =
+          p.slot.tilt[0] + Math.sin(seconds * p.slot.spin[1] * 3) * 0.14 + momentum * 0.4;
       }
     }
 
@@ -521,6 +660,7 @@ export function mount(host: HTMLElement, links: Link[] = []): (() => void) | nul
 
   let raf = 0;
   let lastT = 0;
+  let prevT = 0;
   let running = false;
   let visible = false;
   /**
@@ -537,12 +677,20 @@ export function mount(host: HTMLElement, links: Link[] = []): (() => void) | nul
 
   function frame(t: number) {
     raf = requestAnimationFrame(frame);
+    // First frame after a resume has no previous timestamp to measure from.
+    if (prevT === 0) prevT = t;
     draw(t);
   }
 
   function start() {
     if (running || !sized || !visible || document.hidden || motionQuery.matches) return;
     running = true;
+    // The loop was paused while the band was off-screen, so the page may have
+    // moved thousands of pixels since the last sample. Without this the first
+    // frame back reads that as one enormous flick and the objects snap.
+    lastScrollY = scrollY;
+    momentum = 0;
+    prevT = 0;
     raf = requestAnimationFrame(frame);
   }
 
@@ -612,8 +760,13 @@ export function mount(host: HTMLElement, links: Link[] = []): (() => void) | nul
     canvas.addEventListener('pointermove', onPointerMove, { passive: true });
     canvas.addEventListener('pointerdown', onPointerDown, { passive: true });
     canvas.addEventListener('pointerleave', onPointerLeave, { passive: true });
+    canvas.addEventListener('pointercancel', onPointerCancel, { passive: true });
     canvas.addEventListener('click', onClick);
   }
+
+  // Always listened for, links or not: the scroll response is decoration and
+  // does not depend on there being anything to open.
+  window.addEventListener('scroll', onScroll, { passive: true });
   // Parallax follows the pointer across the whole page, not just the band —
   // it is the reason the objects feel like they are in the room with you.
   window.addEventListener('pointermove', toNdcParallaxOnly, { passive: true });
@@ -645,7 +798,9 @@ export function mount(host: HTMLElement, links: Link[] = []): (() => void) | nul
     canvas.removeEventListener('pointermove', onPointerMove);
     canvas.removeEventListener('pointerdown', onPointerDown);
     canvas.removeEventListener('pointerleave', onPointerLeave);
+    canvas.removeEventListener('pointercancel', onPointerCancel);
     canvas.removeEventListener('click', onClick);
+    window.removeEventListener('scroll', onScroll);
     label.remove();
     renderer.dispose();
     canvas.remove();

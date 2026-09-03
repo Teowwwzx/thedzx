@@ -57,6 +57,20 @@ function box(w: number, h: number, d: number, mat: MeshLambertMaterial | MeshBas
   return new Mesh(new BoxGeometry(w, h, d), mat);
 }
 
+/**
+ * The normalised half-extents of an object, recorded on the group it is
+ * wrapped in. `0.5 * longest-side` is a valid bound for a rotating group but
+ * a wildly loose one for a wide flat thing — a laptop is 1.5 across and 0.6
+ * tall, so a sphere bound reserves nearly twice the vertical room it needs.
+ * The band is short; that slack is the difference between objects that can
+ * move and objects pinned to the middle.
+ */
+export interface Extent {
+  x: number;
+  y: number;
+  z: number;
+}
+
 /** Scale and recentre into a unit cube, so every object is comparable. */
 export function normalise(group: Group): Group {
   const bounds = new Box3().setFromObject(group);
@@ -73,6 +87,13 @@ export function normalise(group: Group): Group {
 
   const outer = new Group();
   outer.add(holder);
+  // Post-normalisation dimensions, so the caller can bound the object
+  // tightly instead of assuming a sphere. Longest side is 1 by construction.
+  outer.userData.extent = {
+    x: size.x / longest,
+    y: size.y / longest,
+    z: size.z / longest,
+  } satisfies Extent;
   return outer;
 }
 
