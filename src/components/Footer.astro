@@ -4,6 +4,10 @@ const year = new Date().getFullYear();
 ---
 
 <footer class="site-footer">
+  {/* Decorative. Sits flush at the top edge, which is why it is inside the
+      footer but outside .rows — the padding lives on .rows instead. */}
+  <hr class="spectrum" aria-hidden="true" />
+
   <div class="shell wide rows">
     <span>© {year} {SITE.author}. {SITE.tagline}</span>
     <span>

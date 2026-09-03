@@ -1,5 +1,6 @@
 ---
 import { postUrl, type Post } from '../lib/posts';
+import { swatchFor } from '../lib/palette';
 import FormattedDate from './FormattedDate.astro';
 
 interface Props {
@@ -16,6 +17,8 @@ interface Props {
 
 const { posts, headingLevel = 2, emptyState } = Astro.props;
 const Heading = `h${headingLevel}` as 'h2' | 'h3';
+
+const rows = posts.map((post) => ({ post, swatch: swatchFor(post.id) }));
 ---
 
 {
@@ -25,11 +28,19 @@ const Heading = `h${headingLevel}` as 'h2' | 'h3';
     </p>
   ) : (
     <ul class="post-list">
-      {posts.map((post) => (
+      {rows.map(({ post, swatch }) => (
         <li>
-          {/* One real <a href> per post. The 3D world will add a second way
-              in, never the only way. */}
-          <a class="post-item" href={postUrl(post)}>
+          {/*
+            One real <a href> per post, and one colour per post — derived
+            from the slug, so it is the same here, on the post's own page
+            and on every rebuild. The two custom properties are all the
+            colour rules need; nothing here names a hue.
+          */}
+          <a
+            class="post-item"
+            href={postUrl(post)}
+            style={`--sw: var(--sw-${swatch.name}); --bold: var(--bold-${swatch.name})`}
+          >
             <p class="post-item-meta">
               <FormattedDate date={post.data.pubDate} />
               {post.data.draft && <span class="chip">Draft</span>}

@@ -9,6 +9,12 @@
 > To bring it back: restore the world entry in `src/pages/index.astro` (see
 > git history for `885f9a7`, "The entry is the game"), and re-add the world
 > budgets in `scripts/check-budgets.mjs`.
+>
+> **`src/scenery/` is not the world.** It is the band of floating objects in
+> the homepage hero — decoration, no navigation, nothing to enter, no zones,
+> no doors. It shares three.js and nothing else. Do not let the two grow
+> into each other: the moment the scenery gets a hotspot, it is the world
+> again and the rule below applies to it.
 
 The six zones below double as the blog's topics. There is never a seventh.
 

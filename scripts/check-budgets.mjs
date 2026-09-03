@@ -41,14 +41,22 @@ const BUDGETS = {
    */
   articleInlineJs: 3 * KB,
   /**
-   * The 3D bundle, gzipped — nginx serves gzip, not brotli, so gzip is the
-   * number a visitor actually pays. This governs the largest single thing the
-   * site ships and previously had no budget at all.
+   * The hero scenery, gzipped — nginx serves gzip, not brotli, so gzip is
+   * the number a visitor actually pays. This is three.js, and it is the
+   * largest single thing the site ships.
    */
-  worldBundleGzip: 320 * KB,
-  /** JS on /world/ BEFORE the click. The whole click-to-load design in one number. */
-  worldEntryJs: 8 * KB,
+  heroBundleGzip: 200 * KB,
+  /**
+   * JS the HOMEPAGE references up front. Everything real is behind a
+   * dynamic import that fires on idle; this budget is what stops someone
+   * "simplifying" that into a static import and putting 130 KB in front of
+   * the first paint.
+   */
+  heroEntryJs: 4 * KB,
 };
+
+/** The only route allowed to reference an external script. */
+const SCRIPTED_ROUTE = 'index.html';
 
 const THREE_D = new Set(['.glb', '.gltf', '.ktx2', '.basis', '.bin', '.hdr', '.exr']);
 
@@ -81,54 +89,71 @@ for (const f of files) {
   if (THREE_D.has(extname(f).toLowerCase())) total3d += size;
 }
 
-// ---- the world bundle ----------------------------------------------------
-// The 3D world is ON HOLD: src/world/ still exists but nothing imports it,
-// so no world bundle should reach dist at all. Assert that rather than
-// quietly skipping — a stray import is exactly what this catches.
+// ---- scripts, per route -------------------------------------------------
+// The 3D WORLD is on hold: src/world/ still exists but nothing imports it,
+// so none of it should reach dist. The hero scenery is separate and is
+// allowed — on the homepage only, and only behind a dynamic import.
+const htmlFiles = files.filter((f) => f.endsWith('.html'));
 const entryHtml = files.find((f) => f === join(DIST, 'index.html'));
 if (!entryHtml) failures.push('dist/index.html not found.');
-const worldEntry = null;
-let worldGzip = 0;
-let entryJs = 0;
 
-if (worldEntry) {
-  const html = await readFile(worldEntry, 'utf8');
-  const srcs = [...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map((m) => m[1]);
-  for (const src of srcs) {
-    if (/^https?:/.test(src)) continue;
-    try {
-      entryJs += (await stat(join(DIST, src.replace(/^\//, '')))).size;
-    } catch {
-      /* not a local file */
-    }
-  }
-  if (entryJs > BUDGETS.worldEntryJs) {
+const externalsIn = (html) =>
+  [...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)]
+    .map((m) => m[1])
+    .filter((src) => !/^https?:/.test(src));
+
+let entryJs = 0;
+let heroGzip = 0;
+
+for (const f of htmlFiles) {
+  const html = await readFile(f, 'utf8');
+  const externals = externalsIn(html);
+  const rel = relative(DIST, f);
+
+  if (rel !== SCRIPTED_ROUTE && externals.length) {
     failures.push(
-      `/ ships ${fmt(entryJs)} of JS up front, budget ${fmt(BUDGETS.worldEntryJs)}. ` +
-        'The 3D bundle must stay behind the dynamic import.',
+      `${rel} loads ${externals.length} external script(s): ${externals.join(', ')}. ` +
+        `Only ${SCRIPTED_ROUTE} may — the scenery is one page's decoration, not the site's.`,
     );
   }
 
-  // The lazily-imported chunk is not referenced from the HTML, so find the
-  // biggest JS file in _astro/ — that is the world.
-  const jsFiles = files.filter((f) => f.endsWith('.js'));
-  let biggest = null;
-  let biggestSize = 0;
-  for (const f of jsFiles) {
-    const size = (await stat(f)).size;
-    if (size > biggestSize) {
-      biggestSize = size;
-      biggest = f;
+  if (rel === SCRIPTED_ROUTE) {
+    for (const src of externals) {
+      try {
+        entryJs += (await stat(join(DIST, src.replace(/^\//, '')))).size;
+      } catch {
+        /* not a local file */
+      }
     }
   }
-  if (biggest) {
-    worldGzip = gzipSync(await readFile(biggest)).length;
-    if (worldGzip > BUDGETS.worldBundleGzip) {
-      failures.push(
-        `world bundle ${relative(DIST, biggest)} is ${fmt(worldGzip)} gzipped, ` +
-          `budget ${fmt(BUDGETS.worldBundleGzip)}.`,
-      );
-    }
+}
+
+if (entryJs > BUDGETS.heroEntryJs) {
+  failures.push(
+    `/ ships ${fmt(entryJs)} of JS up front, budget ${fmt(BUDGETS.heroEntryJs)}. ` +
+      'three.js must stay behind the dynamic import.',
+  );
+}
+
+// The lazily-imported chunk is not referenced from any HTML, so find the
+// biggest JS file in _astro/ — that is three.
+const jsFiles = files.filter((f) => f.endsWith('.js'));
+let biggest = null;
+let biggestSize = 0;
+for (const f of jsFiles) {
+  const size = (await stat(f)).size;
+  if (size > biggestSize) {
+    biggestSize = size;
+    biggest = f;
+  }
+}
+if (biggest) {
+  heroGzip = gzipSync(await readFile(biggest)).length;
+  if (heroGzip > BUDGETS.heroBundleGzip) {
+    failures.push(
+      `hero bundle ${relative(DIST, biggest)} is ${fmt(heroGzip)} gzipped, ` +
+        `budget ${fmt(BUDGETS.heroBundleGzip)}.`,
+    );
   }
 }
 
@@ -183,15 +208,11 @@ console.log(
     `${fmt(articleInline)} inline / ${fmt(BUDGETS.articleInlineJs)}`,
 );
 
-// With the world on hold the whole site should ship no JS whatsoever.
-const shippedJs = files.filter((f) => f.endsWith('.js'));
-if (shippedJs.length) {
-  const total = (await Promise.all(shippedJs.map(async (f) => (await stat(f)).size))).reduce((a, b) => a + b, 0);
-  console.log(`  JS in dist:       ${shippedJs.length} file(s), ${fmt(total)}`);
-  console.log('  note  the 3D world is on hold — JS here means something re-imported it');
-} else {
-  console.log('  JS in dist:       none (3D world on hold)');
-}
+console.log(`  Homepage up-front: ${fmt(entryJs)} / ${fmt(BUDGETS.heroEntryJs)}`);
+console.log(
+  `  Hero scenery:     ${heroGzip ? fmt(heroGzip) : 'none'} gzipped / ${fmt(BUDGETS.heroBundleGzip)}` +
+    `${biggest ? ` (${relative(DIST, biggest)})` : ''}`,
+);
 
 for (const n of notes) console.log(`  note  ${n}`);
 

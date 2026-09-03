@@ -37,7 +37,7 @@
      stays identical. A custom property survives, because it is readable at
      runtime. Hence a declaration rather than a note.
      ------------------------------------------------------------------ */
-  --asset-generation: 2;
+  --asset-generation: 3;
 
   /* Warm off-white, not pure white: it takes the glare off a full-bleed
      page and makes black type read as ink rather than as a screen. */
@@ -50,9 +50,39 @@
   --line:      #d9d9d5;
   --line-soft: #e6e6e2;
 
-  --accent:      #a8481f;
-  --accent-ink:  #8f3d1a;
-  --accent-soft: #f2e4da;
+  --accent:      #5b46d6;
+  --accent-ink:  #4a35c4;
+  --accent-soft: #ded6ff;
+  /* ------------------------------------------------------------------
+     THE PALETTE. Mirrored from src/lib/palette.ts — `npm run palette`
+     fails the build if the two drift, and checks every wash/ink pair for
+     contrast.
+
+     Declared ONCE, outside both theme blocks, on purpose. A wash is a
+     bright block punched into the page and it reads the same against
+     paper or against ink; pinning the pair also means no theme
+     combination can turn it into unreadable text, which is the failure
+     this site has already shipped once.
+     ------------------------------------------------------------------ */
+  --sw-ink: #17130c;
+
+  --sw-butter: #f7e96a;  --bold-butter: #a87a00;
+  --sw-blush:  #ffd6f2;  --bold-blush:  #e02f8f;
+  --sw-cyan:   #9beef2;  --bold-cyan:   #0a8790;
+  --sw-mint:   #c2f2d8;  --bold-mint:   #188a50;
+  --sw-amber:  #ffc75a;  --bold-amber:  #c2650a;
+  --sw-lilac:  #ded6ff;  --bold-lilac:  #5b46d6;
+  --sw-peach:  #ffcfae;  --bold-peach:  #c8471c;
+
+  /* Per-element accent. Every rule below reads these; a component sets them
+     inline (PostList, PostLayout) and inherits a sane default here, so an
+     element that forgets to set one is merely uncoloured, never invisible. */
+  --sw: var(--sw-lilac);
+  --bold: var(--bold-lilac);
+
+  /* How much of a bold hue goes into the hero's colour field. See
+     .hero::before — it is the only difference between the two themes there. */
+  --field-strength: 34%;
 
   --code-bg: #1a2029;
   --code-ink: #d8dee8;
@@ -90,9 +120,23 @@
     --line:      #34342f;
     --line-soft: #292924;
 
-    --accent:      #e08a52;
-    --accent-ink:  #eda06d;
-    --accent-soft: #33241a;
+    --accent:      #b8a8ff;
+    --accent-ink:  #c7bbff;
+    --accent-soft: #2b2358;
+
+    /* Bold lifted for a dark ground — see palette.ts. The wash pair is
+       deliberately NOT redeclared: it is identical in both themes. And
+       neither --bold nor --sw is redeclared, because custom properties
+       resolve at use: `--bold: var(--bold-lilac)` set on :root above picks
+       up whichever --bold-lilac finally wins on :root, which is this one. */
+    --bold-butter: #f5c93c;
+    --bold-blush:  #ff74bd;
+    --bold-cyan:   #3fd6de;
+    --bold-mint:   #4fd48d;
+    --bold-amber:  #ff9a3c;
+    --bold-lilac:  #a894ff;
+    --bold-peach:  #ff8557;
+    --field-strength: 52%;
 
     --code-bg: #0a0d12;
     --code-ink: #c9d1de;
@@ -111,9 +155,20 @@
   --line:      #34342f;
   --line-soft: #292924;
 
-  --accent:      #e08a52;
-  --accent-ink:  #eda06d;
-  --accent-soft: #33241a;
+  --accent:      #b8a8ff;
+  --accent-ink:  #c7bbff;
+  --accent-soft: #2b2358;
+
+  /* Bold lifted for a dark ground — see palette.ts. See the note in the
+     prefers-color-scheme block above for why --bold is not repeated. */
+  --bold-butter: #f5c93c;
+  --bold-blush:  #ff74bd;
+  --bold-cyan:   #3fd6de;
+  --bold-mint:   #4fd48d;
+  --bold-amber:  #ff9a3c;
+  --bold-lilac:  #a894ff;
+  --bold-peach:  #ff8557;
+  --field-strength: 52%;
 
   --code-bg: #0a0d12;
   --code-ink: #c9d1de;
@@ -130,7 +185,14 @@
    beats it and el.hidden = true does nothing visible. */
 [hidden] { display: none !important; }
 
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+  /* The hero is full-bleed via `100vw`, and 100vw INCLUDES the scrollbar on
+     every OS that still draws one — 15px of horizontal overflow under the
+     whole site. `clip`, not `hidden`: hidden would make the viewport a
+     scroll container and break scroll anchoring; clip just cuts. */
+  overflow-x: clip;
+}
 
 body {
   margin: 0;
@@ -276,10 +338,11 @@ main { flex: 1 0 auto; padding-block: 40px 88px; }
   font-weight: 700;
 }
 
-/* --- footer --- */
+/* --- footer ---
+   No border-top: the spectrum strip is the top edge. Padding is on .rows,
+   so the strip sits flush against it. */
 .site-footer {
-  border-top: 1px solid var(--line);
-  padding-block: 28px 40px;
+  padding-bottom: 40px;
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.7;
@@ -289,7 +352,7 @@ main { flex: 1 0 auto; padding-block: 40px 88px; }
 .site-footer a { color: var(--muted); }
 .site-footer a:hover { color: var(--accent); }
 
-.site-footer .rows { display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; }
+.site-footer .rows { display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; padding-top: 28px; }
 
 /* --- prose --- */
 .prose { max-width: var(--measure); }
@@ -363,8 +426,6 @@ main { flex: 1 0 auto; padding-block: 40px 88px; }
 .table-scroll { overflow-x: auto; }
 
 /* --- masthead --- */
-.masthead { padding-block: clamp(48px, 12vh, 120px) 0; }
-
 .masthead h1 {
   /* The one big gesture on the page. 11vw is deliberate: it fills the
      viewport width at every size instead of picking a "safe" middle. */
@@ -424,20 +485,10 @@ main { flex: 1 0 auto; padding-block: 40px 88px; }
   color: var(--muted);
 }
 
-/* --- post list --- */
+/* --- post list ---
+   The row's hover/focus treatment lives in the COLOUR section below, which
+   is also where its padding and margins are set. Keep them together. */
 .post-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-
-.post-list > li { border-top: 1px solid var(--line); }
-.post-list > li:last-child { border-bottom: 1px solid var(--line); }
-
-.post-item {
-  display: block;
-  padding: 30px 0;
-  text-decoration: none;
-  color: inherit;
-}
-
-.post-item:hover .post-item-title { color: var(--accent); }
 
 .post-item-meta {
   font-family: var(--font-ui);
@@ -610,4 +661,259 @@ a.chip:hover { background: var(--accent-ink); color: var(--bg); }
   opacity: 0.85;
   margin: 0;
   border: 0;
+}
+
+
+/* ==================================================================
+   COLOUR
+   ==================================================================
+   The reference (aardvarkbookclub.com) gets its energy from saturated
+   blocks against plain paper, not from gradients or shadows. So does
+   this: flat fields, hard edges, dark ink on bright ground.
+
+   Every rule here reads --sw / --bold from the nearest ancestor that
+   set them. Nothing hardcodes a hue.
+   ================================================================== */
+
+/* --- the spectrum strip -------------------------------------------
+   Seven hard-edged bands, no gradient interpolation — `color-stop`
+   pairs at the same percentage give a clean edge. Decorative only:
+   aria-hidden in the markup, and it carries no information.
+   ------------------------------------------------------------------ */
+.spectrum {
+  height: 6px;
+  border: 0;
+  margin: 0;
+  background: linear-gradient(
+    to right,
+    var(--bold-butter) 0 14.285%,
+    var(--bold-blush)  14.285% 28.57%,
+    var(--bold-cyan)   28.57% 42.85%,
+    var(--bold-mint)   42.85% 57.14%,
+    var(--bold-amber)  57.14% 71.42%,
+    var(--bold-lilac)  71.42% 85.71%,
+    var(--bold-peach)  85.71% 100%
+  );
+}
+
+.site-header .spectrum,
+.site-footer .spectrum { height: 5px; }
+
+/* --- the hero -----------------------------------------------------
+   Full-bleed: the colour has to reach both edges or it reads as a card
+   floating in the page rather than as the top of the site. The paired
+   negative margin and padding keep the TEXT exactly where the shell
+   would have put it while the BOX spans the viewport. `overflow-x: clip`
+   on <html> is what makes that safe — see the note there.
+   ------------------------------------------------------------------ */
+.hero {
+  position: relative;
+  isolation: isolate;
+  margin-inline: calc(50% - 50vw);
+  padding-inline: calc(50vw - 50%);
+  overflow: clip;
+}
+
+/* The always-there colour, and the fallback when there is no WebGL, no
+   JavaScript, or the visitor asked for no motion. Soft fields rather than
+   a flat wash, so the huge type has something to sit against without ever
+   getting dark enough to fight it.
+
+   --field-strength carries the one difference between themes: the same
+   hues need more weight against ink than against paper to read as colour
+   at all. */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(46% 62% at 84% 20%, color-mix(in oklab, var(--bold-lilac) var(--field-strength), transparent), transparent 70%),
+    radial-gradient(44% 58% at 58% 96%, color-mix(in oklab, var(--bold-cyan) var(--field-strength), transparent), transparent 70%),
+    radial-gradient(40% 54% at 6% 72%, color-mix(in oklab, var(--bold-butter) var(--field-strength), transparent), transparent 70%),
+    radial-gradient(34% 44% at 30% 4%, color-mix(in oklab, var(--bold-blush) var(--field-strength), transparent), transparent 72%),
+    radial-gradient(30% 50% at 99% 70%, color-mix(in oklab, var(--bold-mint) var(--field-strength), transparent), transparent 70%);
+}
+
+/* Browsers without color-mix() get the pale washes instead of nothing. */
+@supports not (background: color-mix(in oklab, red 50%, transparent)) {
+  .hero::before {
+    background:
+      radial-gradient(46% 62% at 84% 20%, var(--sw-lilac), transparent 70%),
+      radial-gradient(44% 58% at 58% 96%, var(--sw-cyan), transparent 70%),
+      radial-gradient(40% 54% at 6% 72%, var(--sw-butter), transparent 70%),
+      radial-gradient(34% 44% at 30% 4%, var(--sw-blush), transparent 72%),
+      radial-gradient(30% 50% at 99% 70%, var(--sw-mint), transparent 70%);
+  }
+}
+
+.masthead { padding-block: clamp(44px, 11vh, 108px) 0; }
+
+/* The three.js canvas is injected here — a band of its own beneath the
+   headline, never behind it. A saturated object passing under 132px of
+   near-black type lands around 1.2:1, and near-white type in dark mode is
+   no better; there is no object palette that survives both. See the note
+   at the top of src/scenery/hero.ts. */
+.hero-stage {
+  /* Hidden until something on the page says a canvas is actually coming.
+     No JavaScript, or no WebGL, and this is dead space at the top of the
+     page — so the DEFAULT is collapsed and .stage-ok opens it. */
+  display: none;
+}
+
+:root.stage-ok .hero-stage {
+  display: block;
+  position: relative;
+  height: clamp(232px, 34vh, 400px);
+  margin-top: clamp(18px, 3.5vh, 40px);
+  margin-bottom: clamp(28px, 6vh, 64px);
+  /* Out to the hero's own edges, not the text column's: 50% here is half
+     the hero's CONTENT box, so this cancels the hero's padding exactly. */
+  margin-inline: calc(50% - 50vw);
+  pointer-events: none;
+  /* The space is reserved from the first paint — the class is set by an
+     inline script above the hero, not after the module loads — so nothing
+     below jumps when the canvas arrives. Only the fade is deferred. */
+  opacity: 0;
+  transition: opacity 500ms ease;
+}
+
+:root.stage-ok .hero-stage[data-ready] { opacity: 1; }
+
+.hero-stage canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none;
+}
+
+@media (max-width: 700px) {
+  :root.stage-ok .hero-stage { height: 210px; }
+}
+
+/* --- a swatch dot -------------------------------------------------- */
+.dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--bold);
+  flex: none;
+}
+
+/* --- post rows, washed ---------------------------------------------
+   The whole row takes the colour on hover and on keyboard focus. The
+   negative inline margin plus matching padding is what lets the field
+   bleed past the text column without the text moving.
+   ------------------------------------------------------------------ */
+.post-list > li { border-top: 1px solid var(--line); }
+.post-list > li:last-child { border-bottom: 1px solid var(--line); }
+
+.post-item {
+  display: block;
+  padding: 30px 18px;
+  margin-inline: -18px;
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.post-item:hover,
+.post-item:focus-visible {
+  background: var(--sw);
+  /* The pair is fixed in palette.ts and checked by `npm run palette`, so
+     this is legible on every swatch in both themes. */
+  color: var(--sw-ink);
+  outline-offset: -2px;
+}
+
+.post-item:hover .post-item-title,
+.post-item:focus-visible .post-item-title,
+.post-item:hover .post-item-desc,
+.post-item:focus-visible .post-item-desc,
+.post-item:hover .post-item-meta,
+.post-item:focus-visible .post-item-meta {
+  color: var(--sw-ink);
+}
+
+/* The arrow only exists on hover, so it costs nothing at rest and gives the
+   row somewhere to go. */
+.post-item-title::after {
+  content: '↗';
+  display: inline-block;
+  margin-left: 0.4ch;
+  opacity: 0;
+  transform: translate(-6px, 4px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.post-item:hover .post-item-title::after,
+.post-item:focus-visible .post-item-title::after {
+  opacity: 1;
+  transform: none;
+}
+
+/* The date, as a block of the post's own colour.
+   This is what puts colour on every row AT REST — the wash below only
+   appears under the pointer, which is no colour at all on a phone. The
+   wash/ink pair is fixed and checked, so this is legible in both themes
+   and on all seven hues. */
+.post-item-meta time {
+  background: var(--sw);
+  color: var(--sw-ink);
+  padding: 3px 8px 4px;
+  border-radius: 2px;
+}
+
+/* Inverted on hover, because at that point the row itself is --sw and a
+   chip of the same colour would simply vanish. */
+.post-item:hover .post-item-meta time,
+.post-item:focus-visible .post-item-meta time {
+  background: var(--sw-ink);
+  color: var(--sw);
+}
+
+/* --- an article's colour ------------------------------------------- */
+.article-band {
+  height: 10px;
+  background: var(--bold);
+  margin-bottom: 30px;
+  border: 0;
+}
+
+.prose blockquote { border-left-color: var(--bold); }
+
+/* A coloured chip, when the element sets --sw. */
+.chip.swatch {
+  background: var(--sw);
+  color: var(--sw-ink);
+}
+
+/* --- the tagline, as a block --------------------------------------- */
+.tagline-chip {
+  display: inline-block;
+  background: var(--sw-butter);
+  color: var(--sw-ink);
+  padding: 5px 12px 6px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+/* --- the count, as a block ----------------------------------------- */
+.count-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--ink);
+  color: var(--bg);
+  padding: 5px 12px 6px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin: 0 0 6px;
 }

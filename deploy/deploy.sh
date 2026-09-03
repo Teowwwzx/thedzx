@@ -23,6 +23,7 @@ cd "$(dirname "$0")/.."
 
 echo "==> build"
 npm run build
+npm run palette
 npm run budget
 
 RELEASE="$(date -u +%Y%m%d-%H%M%S)"

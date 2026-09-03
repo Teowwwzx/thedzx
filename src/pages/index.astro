@@ -7,12 +7,13 @@ import { allPosts } from '../lib/posts';
 /**
  * The blog.
  *
- * One big gesture and a lot of air. No topic taxonomy, no hero image, no
- * cards — the reference sites this is modelled on (aardvarkbookclub.com,
- * sharplink.com) get their presence almost entirely from type size,
- * negative tracking and whitespace, not from decoration.
+ * Type does the structural work — one big gesture, a lot of air — and
+ * colour does the rest: a field behind the masthead, a band of floating
+ * objects under it, and a swatch per post that follows it to its own page.
  *
- * The 3D world is ON HOLD, not deleted. See LOCATIONS.md.
+ * The 3D world (a walkable room, a street, a tower) is ON HOLD, not
+ * deleted. See LOCATIONS.md. The objects in the hero are new and separate:
+ * decoration, no navigation, nothing to enter.
  */
 const posts = await allPosts();
 
@@ -30,18 +31,61 @@ const jsonLd = [
 ---
 
 <BaseLayout title={SITE.title} description={SITE.description} jsonLd={jsonLd} wide>
-  <section class="masthead">
-    <p class="label">{SITE.tagline}</p>
-    <h1>{SITE.title}</h1>
-    <p class="masthead-lede">{SITE.description}</p>
+  {/*
+    Runs BEFORE the hero below is parsed, which is the whole point: it
+    reserves the object band in the very first layout, so the canvas
+    arriving 300ms later pushes nothing down. The check is a cheap proxy
+    for "this browser can do WebGL" — an actual context probe here would
+    cost a canvas and a GPU handle before first paint. If the real context
+    then fails, the module script below takes the class off again.
+  */}
+  <script is:inline>
+    if (window.WebGL2RenderingContext) document.documentElement.classList.add('stage-ok');
+  </script>
+
+  <section class="hero">
+    <div class="masthead">
+      <p class="tagline-chip">{SITE.tagline}</p>
+      <h1>{SITE.title}</h1>
+      <p class="masthead-lede">{SITE.description}</p>
+    </div>
+
+    {/* Decoration. No text, no links, nothing to read — so it is hidden
+        from assistive technology rather than described. */}
+    <div class="hero-stage" id="hero-stage" aria-hidden="true"></div>
   </section>
 
-  <hr class="rule rule-draw" style="margin-top:clamp(64px,14vh,140px)" />
-
-  <section class="reveal" style="margin-top:34px">
-    <p class="label" style="margin:0 0 6px">
+  <section class="reveal">
+    <p class="count-chip">
+      <span class="dot" style="--bold: var(--bold-mint)"></span>
       {posts.length === 0 ? 'Writing' : `Writing — ${posts.length}`}
     </p>
     <PostList posts={posts} headingLevel={2} />
   </section>
 </BaseLayout>
+
+<script>
+  /*
+   * The only external script on the site, and it is on this page only.
+   *
+   * Deferred to idle so it never competes with the fonts or the first
+   * paint, and dynamically imported so three.js lands in a chunk of its
+   * own that no other route pulls in.
+   */
+  const host = document.getElementById('hero-stage');
+
+  if (host) {
+    const collapse = () => document.documentElement.classList.remove('stage-ok');
+
+    const go = () => {
+      import('../scenery/hero')
+        .then((m) => {
+          if (!m.mount(host)) collapse();
+        })
+        .catch(collapse);
+    };
+
+    if ('requestIdleCallback' in window) requestIdleCallback(go, { timeout: 2500 });
+    else setTimeout(go, 300);
+  }
+</script>

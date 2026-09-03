@@ -3,6 +3,10 @@ import { SITE } from '../consts';
 ---
 
 <header class="site-header">
+  {/* Decorative only. It carries no state and names nothing — the palette
+      as a strip, so the colour starts at the very top of every page. */}
+  <hr class="spectrum" aria-hidden="true" />
+
   <div class="shell wide bar">
     <a class="brand" href="/">{SITE.title}</a>
 

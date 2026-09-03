@@ -1,6 +1,7 @@
 import { OGImageRoute } from 'astro-og-canvas';
 import { SITE } from '../../consts';
 import { allPosts } from '../../lib/posts';
+import { SWATCHES, rgb, swatchFor } from '../../lib/palette';
 
 /**
  * Build-time Open Graph cards. Generated once at build and served as static
@@ -16,6 +17,8 @@ interface Card {
   title: string;
   description: string;
   eyebrow: string;
+  /** The post's own swatch, as channels. Same hue as its row on the index. */
+  accent: [number, number, number];
 }
 
 const posts = await allPosts();
@@ -26,6 +29,9 @@ const cards: Record<string, Card> = {
     title: SITE.title,
     description: SITE.description,
     eyebrow: SITE.tagline,
+    // The card is dark, so the site card takes the dark-ground variant of
+    // the house hue for the same reason the strip does.
+    accent: rgb(SWATCHES[5].boldDark),
   },
 };
 
@@ -38,6 +44,7 @@ for (const post of posts) {
     // carries the date instead. Reading .label off an absent zone is what
     // broke the build when the taxonomy came out.
     eyebrow: `${SITE.title} · ${post.data.pubDate.toISOString().slice(0, 10)}`,
+    accent: rgb(swatchFor(post.id).boldDark),
   };
 }
 
@@ -49,12 +56,14 @@ export const { getStaticPaths, GET } = await OGImageRoute({
   getImageOptions: (_path, page) => ({
     title: page.title,
     description: page.description,
-    // Matches the site's dark palette: #10141b ground, #de8b4c accent.
+    // The card is always dark — it is shown on someone else's timeline, not
+    // on this site, so it does not follow the visitor's theme. The rule down
+    // the side is the post's own swatch, in the dark-ground variant.
     bgGradient: [
       [16, 20, 27],
       [24, 29, 38],
     ],
-    border: { color: [222, 139, 76], width: 12, side: 'inline-start' },
+    border: { color: page.accent, width: 14, side: 'inline-start' },
     padding: 68,
     font: {
       title: { size: 62, weight: 'ExtraBold', color: [223, 229, 238], lineHeight: 1.15 },
