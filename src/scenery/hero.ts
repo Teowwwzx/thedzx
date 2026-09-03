@@ -240,7 +240,13 @@ export function mount(host: HTMLElement, links: Link[] = []): (() => void) | nul
     });
     slotsInUse = slots;
     builtDark = dark;
+    // Clear what updateHover() owns, not just the reference. Crossing the
+    // 700px breakpoint with the pointer at rest on an object used to leave
+    // its title hanging over empty colour with cursor:pointer under it,
+    // promising a link that no longer existed.
     hovered = null;
+    canvas.style.cursor = '';
+    delete label.dataset.shown;
   }
 
   function layout() {
@@ -318,6 +324,10 @@ export function mount(host: HTMLElement, links: Link[] = []): (() => void) | nul
   const projected = new Vector3();
   let hovered: Placed | null = null;
   let pointerInside = false;
+  /** Where the press landed, so onClick can tell a tap from a drag. */
+  let pressed = false;
+  let pressX = 0;
+  let pressY = 0;
 
   function toNdc(e: { clientX: number; clientY: number }) {
     const r = host.getBoundingClientRect();
@@ -347,7 +357,19 @@ export function mount(host: HTMLElement, links: Link[] = []): (() => void) | nul
   function updateHover(): boolean {
     let next: Placed | null = null;
 
-    if (pointerInside && links.length > 0 && Math.abs(ndc.x) <= 1 && Math.abs(ndc.y) <= 1) {
+    // Deliberately NOT gated on `pointerInside`.
+    //
+    // Touch fires pointerout/pointerleave BEFORE the compatibility click, so
+    // a gate on that flag makes every tap miss: the label flashes on
+    // pointerdown and the click then resolves to nothing. That shipped, and
+    // it made the shortcut dead on every phone and tablet while working
+    // perfectly under a mouse — which is exactly why hand-testing missed it.
+    //
+    // The flag is not load-bearing here anyway: onPointerLeave parks `ndc`
+    // at (-2, -2), which the bounds check below rejects, and the window
+    // listener that follows the pointer across the page never writes `ndc`
+    // at all. So hover still cannot light up from the post list below.
+    if (links.length > 0 && Math.abs(ndc.x) <= 1 && Math.abs(ndc.y) <= 1) {
       scene.updateMatrixWorld(true);
       raycaster.setFromCamera(ndc, camera);
       const hits = raycaster.intersectObjects(
@@ -417,11 +439,26 @@ export function mount(host: HTMLElement, links: Link[] = []): (() => void) | nul
    */
   function onPointerDown(e: PointerEvent) {
     pointerInside = true;
+    pressed = true;
+    pressX = e.clientX;
+    pressY = e.clientY;
     toNdc(e);
     if (updateHover() && !running) draw(lastT);
   }
 
   function onClick(e: MouseEvent) {
+    // A drag is not a click. The reflex on any 3D scene is to grab and
+    // orbit, and a press that starts on empty band and merely RELEASES on
+    // an object would otherwise throw you into a post you never chose.
+    // 6px is the browser's own drag slop.
+    const dragged = !pressed || Math.hypot(e.clientX - pressX, e.clientY - pressY) > 6;
+    pressed = false;
+    if (dragged) return;
+
+    // Alt-click is "download" and anything but the primary button is not a
+    // navigation. The canvas has no anchor default to honour, so decline.
+    if (e.button !== 0 || e.altKey) return;
+
     toNdc(e);
     // A fresh test rather than trusting `hovered`: on touch there was never
     // a move event, and on desktop the objects have drifted since the last
@@ -429,7 +466,20 @@ export function mount(host: HTMLElement, links: Link[] = []): (() => void) | nul
     // which is what stops a stray tap navigating.
     updateHover();
     const href = hovered?.link?.href;
-    if (href) window.location.href = href;
+
+    if (!href) {
+      // A touch tap leaves `ndc` sitting on the point it hit, and no further
+      // pointer event is coming to clear it — so the label would hang there
+      // over a missed tap. Put the band back to "no pointer".
+      ndc.set(-2, -2);
+      if (updateHover() && !running) draw(lastT);
+      return;
+    }
+
+    // Mirror what the identical <a href> in the list below would do, rather
+    // than stealing the tab from someone queueing up three posts.
+    if (e.metaKey || e.ctrlKey || e.shiftKey) window.open(href, '_blank', 'noopener');
+    else window.location.href = href;
   }
 
   function draw(t: number) {

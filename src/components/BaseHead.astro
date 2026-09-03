@@ -91,7 +91,17 @@ const fullTitle = title === SITE.title ? title : `${title} — ${SITE.title}`;
 <meta name="generator" content={Astro.generator} />
 
 {
+  /*
+    JSON.stringify does not escape `<`, so a post titled `Escaping </script>`
+    would close this element early: the structured data becomes invalid JSON
+    and the rest of the object is reparsed as HTML in <head>. Escaping the
+    angle bracket keeps the JSON byte-for-byte valid.
+  */
   jsonLd.map((block) => (
-    <script is:inline type="application/ld+json" set:html={JSON.stringify(block)} />
+    <script
+      is:inline
+      type="application/ld+json"
+      set:html={JSON.stringify(block).replace(/</g, '\\u003c')}
+    />
   ))
 }

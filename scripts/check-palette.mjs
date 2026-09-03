@@ -40,6 +40,18 @@ const inkMatch = ts.match(/SWATCH_INK\s*=\s*'(#[0-9a-f]{6})'/i);
 const failures = [];
 
 if (swatches.length === 0) failures.push(`${TS}: no swatches parsed — has SWATCHES changed shape?`);
+
+// A gate that silently skips what it cannot parse is worse than no gate: a
+// swatch written with its fields transposed, or with a #fff shorthand, was
+// dropped by the regex above and the check then printed a tick for the six
+// it did understand. Count the declarations independently and compare.
+const declared = (ts.match(/\{\s*name:\s*'/g) ?? []).length;
+if (swatches.length !== declared) {
+  failures.push(
+    `${TS}: parsed ${swatches.length} of ${declared} swatches — an entry is not in the ` +
+      'canonical { name, wash, bold, boldDark } shape and was skipped, not checked.',
+  );
+}
 if (!inkMatch) failures.push(`${TS}: SWATCH_INK not found.`);
 
 /* ---- read the stylesheet ---------------------------------------------- */

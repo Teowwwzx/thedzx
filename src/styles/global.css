@@ -749,6 +749,12 @@ a.chip:hover { background: var(--accent-ink); color: var(--bg); }
 
 .masthead { padding-block: clamp(44px, 11vh, 108px) 0; }
 
+/* With no stage there is nothing below the lede, and the colour field ends
+   flush against its last line. Give the hero the space the stage's own
+   margin would have supplied. `inset: 0` on ::before resolves against the
+   padding box, so the colour grows with it. */
+:root:not(.stage-ok) .hero { padding-bottom: clamp(28px, 6vh, 64px); }
+
 /* The three.js canvas is injected here — a band of its own beneath the
    headline, never behind it. A saturated object passing under 132px of
    near-black type lands around 1.2:1, and near-white type in dark mode is
@@ -905,11 +911,16 @@ a.chip:hover { background: var(--accent-ink); color: var(--bg); }
   color: var(--sw);
 }
 
-/* --- an article's colour ------------------------------------------- */
-.article-band {
+/* --- an article's colour -------------------------------------------
+   Selector is `.prose hr.article-band`, not `.article-band`. The generic
+   `.prose hr` rule is (0,1,1) and beat it: the band shipped with a grey
+   hairline across its top and 2.4em of margin on both sides. `margin-block`
+   rather than `margin-bottom` for the same reason — the top value has to be
+   stated or `.prose hr`'s survives. */
+.prose hr.article-band {
   height: 10px;
   background: var(--bold);
-  margin-bottom: 30px;
+  margin-block: 0 30px;
   border: 0;
 }
 
