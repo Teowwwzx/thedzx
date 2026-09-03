@@ -15,9 +15,9 @@ A personal blog that doubles as an explorable 3D world. **It is a blog with a
 3D navigation skin, not a 3D world containing text.** Every decision follows
 from that. See `LOCATIONS.md` for scope and the roadmap stages.
 
-**All stages are built.** `/` IS the world: a walkable five-location greybox
-built entirely from primitives. No models, no textures, nothing fetched for
-geometry. There is no landing page and no `/world/` route.
+An ordinary static blog. **The 3D world is ON HOLD** — `src/world/` is intact
+and `npm run world` still validates it, but nothing imports it, so the built
+site ships no JavaScript at all. Do not wire it back in without being asked.
 
 ## Pinned versions — do not upgrade in passing
 

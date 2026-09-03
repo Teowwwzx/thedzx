@@ -317,6 +317,56 @@ main { flex: 1 0 auto; padding-block: 40px 88px; }
 
 .table-scroll { overflow-x: auto; }
 
+/* --- masthead --- */
+.masthead { padding-block: 40px 8px; max-width: 62ch; }
+
+.masthead h1 {
+  font-size: clamp(34px, 6vw, 52px);
+  letter-spacing: -0.03em;
+  margin-block: 16px 18px;
+}
+
+.masthead-lede { color: var(--ink-2); font-size: 19px; margin: 0; }
+
+/* --- topics --- */
+.topic-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1px;
+  background: var(--line-soft);
+  border-block: 1px solid var(--line-soft);
+}
+
+@media (min-width: 620px) { .topic-list { grid-template-columns: repeat(2, 1fr); } }
+
+.topic-list a {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 2px;
+  background: var(--bg);
+  text-decoration: none;
+  color: inherit;
+}
+
+.topic-list a:hover .topic-name { color: var(--accent-ink); }
+
+.topic-name {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+}
+
+.topic-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
 /* --- post list --- */
 .post-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 

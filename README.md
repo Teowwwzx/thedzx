@@ -3,12 +3,12 @@
 A personal blog that doubles as an explorable 3D world — a room with a desk, a
 street outside, a gym, and the top floors of Merdeka 118.
 
-**All stages are built.** Opening the site drops you into a walkable
-five-location world — a room, the street, a gym, the top of Merdeka 118 and
-the server room. There is no landing page: arriving is the game.
+An ordinary blog: static HTML, **zero JavaScript on every page**, six topics,
+RSS, sitemap, build-time social cards.
 
-Every post is still real static HTML at a real URL. The world is a second way
-in, never the only one.
+**A walkable 3D world was built and is currently on hold.** Nothing loads it,
+so it costs nothing, and every line of it is still in `src/world/`. See
+`LOCATIONS.md` for what it was and how to switch it back on.
 
 The full build plan, including the engine choice, asset sources, licensing
 traps and roadmap, lives in the design doc this repo was scaffolded from.

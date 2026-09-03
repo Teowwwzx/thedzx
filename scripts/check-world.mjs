@@ -2,6 +2,9 @@
 /**
  * Structural checks the type system cannot make.
  *
+ * The 3D world is ON HOLD — nothing on the site loads it — but these checks
+ * still run against the parked source so it does not rot while it waits.
+ *
  * Every one of these was a real defect found by review, not a hypothetical:
  * doors landing you inside furniture, props advertised by a zone with no
  * hotspot to reach them, and a location you can walk into but not out of.

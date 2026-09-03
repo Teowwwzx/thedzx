@@ -35,24 +35,9 @@ const jsonLd = [
 
 <BaseLayout title={z.label} description={z.blurb} image={`/og/zone/${zone}.png`} jsonLd={jsonLd} wide>
   <section style="padding-block:32px 8px;max-width:62ch">
-    <p class="label" style="margin:0 0 14px">
-      Elevation {z.elevation} · Built in stage {z.stage}
-    </p>
+
     <h1 style="font-size:clamp(30px,5.5vw,42px);margin-bottom:16px">{z.label}</h1>
     <p style="color:var(--ink-2);font-size:19px;margin:0 0 20px">{z.blurb}</p>
-    <p class="label" style="margin:0 0 22px">
-      Props here: {z.props.join(' · ')}
-    </p>
-
-    {
-      /* The TV is live data rather than a place you stand, so it is the one
-         zone with no walkable counterpart. A dead link is worse than none. */
-      zone !== 'tv' && (
-        <p style="margin:0">
-          <a class="chip" href="/">Walk in →</a>
-        </p>
-      )
-    }
   </section>
 
   <section style="margin-top:44px">

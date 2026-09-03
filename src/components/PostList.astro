@@ -24,8 +24,7 @@ const Heading = `h${headingLevel}` as 'h2' | 'h3';
 {
   posts.length === 0 ? (
     <p class="note">
-      {emptyState ??
-        'Nothing here yet. Every zone exists on the map before it exists in 3D — the rule is five published posts before a location gets built.'}
+      {emptyState ?? 'Nothing published yet.'}
     </p>
   ) : (
     <ul class="post-list">

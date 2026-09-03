@@ -70,11 +70,12 @@ for (const f of files) {
 }
 
 // ---- the world bundle ----------------------------------------------------
-// The entry IS the homepage now: arriving loads the world. If this ever
-// stops matching, the two checks below silently stop running — which is how
-// the article-JS gate once passed while checking nothing.
-const worldEntry = files.find((f) => f === join(DIST, 'index.html'));
-if (!worldEntry) failures.push('dist/index.html not found — the world-entry budget checked nothing.');
+// The 3D world is ON HOLD: src/world/ still exists but nothing imports it,
+// so no world bundle should reach dist at all. Assert that rather than
+// quietly skipping — a stray import is exactly what this catches.
+const entryHtml = files.find((f) => f === join(DIST, 'index.html'));
+if (!entryHtml) failures.push('dist/index.html not found.');
+const worldEntry = null;
 let worldGzip = 0;
 let entryJs = 0;
 
@@ -171,9 +172,15 @@ for (const a of articles) {
 console.log(`\n  Budget check — ${files.length} files in ${DIST}/`);
 console.log(`  3D assets:        ${fmt(total3d)} / ${fmt(BUDGETS.firstPaint3d)}`);
 console.log(`  Article routes:   ${articles.length} checked, 0 allowed to ship JS`);
-if (worldEntry) {
-  console.log(`  Entry JS:         ${fmt(entryJs)} / ${fmt(BUDGETS.worldEntryJs)}`);
-  console.log(`  World bundle:     ${fmt(worldGzip)} gzip / ${fmt(BUDGETS.worldBundleGzip)}`);
+
+// With the world on hold the whole site should ship no JS whatsoever.
+const shippedJs = files.filter((f) => f.endsWith('.js'));
+if (shippedJs.length) {
+  const total = (await Promise.all(shippedJs.map(async (f) => (await stat(f)).size))).reduce((a, b) => a + b, 0);
+  console.log(`  JS in dist:       ${shippedJs.length} file(s), ${fmt(total)}`);
+  console.log('  note  the 3D world is on hold — JS here means something re-imported it');
+} else {
+  console.log('  JS in dist:       none (3D world on hold)');
 }
 
 for (const n of notes) console.log(`  note  ${n}`);

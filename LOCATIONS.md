@@ -1,6 +1,16 @@
 # Locations
 
-The six zones below are the whole world. There is never a seventh.
+> **THE 3D WORLD IS ON HOLD.**
+> Nothing on the site loads it. All of it is still here — `src/world/`,
+> `src/world/locations/`, `src/world/audio.ts` — and `npm run world` still
+> checks its structure so it does not rot. The site is an ordinary blog until
+> there is something to put in the world.
+>
+> To bring it back: restore the world entry in `src/pages/index.astro` (see
+> git history for `885f9a7`, "The entry is the game"), and re-add the world
+> budgets in `scripts/check-budgets.mjs`.
+
+The six zones below double as the blog's topics. There is never a seventh.
 
 | Zone | Built in 3D | Posts needed | Real posts | Placeholders |
 |---|---|---|---|---|
