@@ -12,9 +12,15 @@ import { SITE_URL } from '../site.config.mjs';
 
 export const SITE = {
   title: 'thedzx',
-  tagline: 'The world is built by IT.',
+  /*
+   * Plain and small. Earlier drafts claimed a thesis about how the world is
+   * built and what the author has figured out — a promise a blog with no
+   * posts cannot keep, and not the register he wanted. Change these two
+   * strings and the whole site's voice changes; nothing else hardcodes them.
+   */
+  tagline: 'Notes to my future self',
   description:
-    'Notes on IT, investment, mindset and the way the world actually runs — from someone who builds the systems underneath it.',
+    'I work in IT. This is where I write things down as I learn them — what broke, what I fixed, and what I still do not understand.',
   // CHANGE ME before your first deploy.
   author: 'Zhen Xiang',
   url: SITE_URL,

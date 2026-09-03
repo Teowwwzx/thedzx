@@ -1,5 +1,5 @@
 import { OGImageRoute } from 'astro-og-canvas';
-import { SITE, ZONES, ZONE_ORDER } from '../../consts';
+import { SITE } from '../../consts';
 import { allPosts } from '../../lib/posts';
 
 /**
@@ -29,22 +29,15 @@ const cards: Record<string, Card> = {
   },
 };
 
-for (const id of ZONE_ORDER) {
-  const z = ZONES[id];
-  cards[`zone-${id}`] = {
-    slug: `zone/${id}`,
-    title: z.label,
-    description: z.blurb,
-    eyebrow: `${SITE.title} · ${z.elevation}`,
-  };
-}
-
 for (const post of posts) {
   cards[`blog-${post.id}`] = {
     slug: `blog/${post.id}`,
     title: post.data.title,
     description: post.data.description,
-    eyebrow: `${SITE.title} · ${ZONES[post.data.zone as keyof typeof ZONES].label}`,
+    // `zone` is optional now and surfaced nowhere on the site, so the card
+    // carries the date instead. Reading .label off an absent zone is what
+    // broke the build when the taxonomy came out.
+    eyebrow: `${SITE.title} · ${post.data.pubDate.toISOString().slice(0, 10)}`,
   };
 }
 
