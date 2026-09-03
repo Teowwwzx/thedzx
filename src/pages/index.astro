@@ -2,7 +2,8 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostList from '../components/PostList.astro';
 import { SITE } from '../consts';
-import { allPosts } from '../lib/posts';
+import { swatchFor } from '../lib/palette';
+import { allPosts, postUrl } from '../lib/posts';
 
 /**
  * The blog.
@@ -13,9 +14,35 @@ import { allPosts } from '../lib/posts';
  *
  * The 3D world (a walkable room, a street, a tower) is ON HOLD, not
  * deleted. See LOCATIONS.md. The objects in the hero are new and separate:
- * decoration, no navigation, nothing to enter.
+ * a band of decoration that happens to be clickable, with no zones, no
+ * doors and nothing to enter.
  */
 const posts = await allPosts();
+
+/**
+ * What the hero objects open, in list order — leftmost object, newest post.
+ *
+ * Eight because the widest layout has seven slots and one spare; the module
+ * takes `links[i]` per slot and ignores the rest, so this number drifting
+ * out of step with src/scenery/hero.ts costs a few bytes and nothing else.
+ *
+ * These are a SHORTCUT. Every one of them is also a real <a href> in the
+ * list below, which is what a crawler, a screen reader or a keyboard uses —
+ * so the canvas can stay aria-hidden and nothing is lost with it.
+ */
+const heroLinks = posts.slice(0, 8).map((post) => ({
+  title: post.data.title,
+  href: postUrl(post),
+  swatch: swatchFor(post.id).name,
+}));
+
+/**
+ * JSON.stringify does not escape `<`, so a title containing `</script>`
+ * would close this block early and the rest of it would be parsed as HTML.
+ * Escaping the angle bracket makes that impossible while leaving the JSON
+ * byte-for-byte valid.
+ */
+const heroLinksJson = JSON.stringify(heroLinks).replace(/</g, '\\u003c');
 
 const jsonLd = [
   {
@@ -50,10 +77,14 @@ const jsonLd = [
       <p class="masthead-lede">{SITE.description}</p>
     </div>
 
-    {/* Decoration. No text, no links, nothing to read — so it is hidden
-        from assistive technology rather than described. */}
+    {/* Duplicates the list below and nothing else, so it is hidden from
+        assistive technology rather than described twice. */}
     <div class="hero-stage" id="hero-stage" aria-hidden="true"></div>
   </section>
+
+  {/* Data, not code: the budget gate skips application/json for the same
+      reason it skips ld+json. */}
+  <script is:inline type="application/json" id="hero-links" set:html={heroLinksJson} />
 
   <section class="reveal">
     <p class="count-chip">
@@ -77,10 +108,20 @@ const jsonLd = [
   if (host) {
     const collapse = () => document.documentElement.classList.remove('stage-ok');
 
+    // Parsed here rather than in the module, so the module has no hidden
+    // dependency on an element id and the page owns its own data. A broken
+    // or missing block just means objects with no links — still decoration.
+    let links = [];
+    try {
+      links = JSON.parse(document.getElementById('hero-links')?.textContent || '[]');
+    } catch {
+      /* leave it empty */
+    }
+
     const go = () => {
       import('../scenery/hero')
         .then((m) => {
-          if (!m.mount(host)) collapse();
+          if (!m.mount(host, links)) collapse();
         })
         .catch(collapse);
     };

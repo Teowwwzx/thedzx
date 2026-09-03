@@ -186,10 +186,12 @@ for (const a of articles) {
     );
   }
 
-  // Inline script, excluding ld+json (which is data, not code).
+  // Inline script, excluding JSON (which is data, not code) — both ld+json
+  // for structured data and the plain application/json the homepage uses to
+  // hand the hero its list of posts.
   let inlineBytes = 0;
   for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
-    if (/application\/ld\+json/.test(m[1])) continue;
+    if (/type="application\/(ld\+)?json"/.test(m[1])) continue;
     if (/\bsrc=/.test(m[1])) continue;
     inlineBytes += Buffer.byteLength(m[2], 'utf8');
   }
