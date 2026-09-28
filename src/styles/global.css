@@ -770,9 +770,9 @@ main { flex: 1 0 auto; padding-block: 40px 88px; }
     radial-gradient(34% 44% at 24% 8%, color-mix(in oklab, var(--bold-blush) var(--field-strength), transparent), transparent 72%),
     radial-gradient(30% 50% at 98% 80%, color-mix(in oklab, var(--bold-amber) var(--field-strength), transparent), transparent 70%);
   opacity: 0.55;
-  /* Fade out downwards instead of stopping in a hard line under the hero. */
-  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent);
-  mask-image: linear-gradient(to bottom, #000 62%, transparent);
+  /* Fade in and out vertically, so neither edge of the field reads as a line. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 60%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 14%, #000 60%, transparent);
   pointer-events: none;
 }
 
