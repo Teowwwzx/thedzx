@@ -2,6 +2,7 @@
 title: "Showing up is the system"
 description: "PLACEHOLDER — replace this description before publishing. It becomes the meta description, the RSS summary and the in-world teaser."
 pubDate: 2026-09-16
+topic: thinking
 zone: gym
 prop: rack
 tags: ["mindset", "discipline", "habits"]

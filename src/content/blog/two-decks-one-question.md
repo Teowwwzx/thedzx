@@ -2,6 +2,7 @@
 title: "Two decks, one question"
 description: "PLACEHOLDER — replace this description before publishing. It becomes the meta description, the RSS summary and the in-world teaser."
 pubDate: 2026-09-09
+topic: macro
 zone: tower
 prop: window-116
 tags: ["investment", "macro", "perspective"]

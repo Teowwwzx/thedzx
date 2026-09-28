@@ -1,14 +1,23 @@
 ---
 import { SITE } from '../consts';
+import { allIdeas } from '../lib/posts';
+
+// The Ideas link exists only when the Ideas page does — see [ideas].astro.
+const hasIdeas = (await allIdeas()).length > 0;
+const path = Astro.url.pathname;
 ---
 
 <header class="site-header">
-  {/* Decorative only. It carries no state and names nothing — the palette
-      as a strip, so the colour starts at the very top of every page. */}
+  {/* Decorative only. The palette as a strip, so colour starts at the top. */}
   <hr class="spectrum" aria-hidden="true" />
 
   <div class="shell wide bar">
     <a class="brand" href="/">{SITE.title}</a>
+
+    <nav class="site-nav" aria-label="Main">
+      {hasIdeas && <a href="/ideas/" aria-current={path.startsWith('/ideas') ? 'page' : undefined}>Ideas</a>}
+      <a class="nav-join" href="#join">Join</a>
+    </nav>
 
     <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Switch colour theme">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" class="icon-sun">

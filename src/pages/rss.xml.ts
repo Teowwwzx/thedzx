@@ -1,6 +1,6 @@
 import rss from '@astrojs/rss';
 import type { APIRoute } from 'astro';
-import { SITE } from '../consts';
+import { SITE, TOPICS, type TopicId } from '../consts';
 import { realPosts } from '../lib/posts';
 
 export const GET: APIRoute = async (context) => {
@@ -22,7 +22,7 @@ export const GET: APIRoute = async (context) => {
       // down. The OG route had the same line and was fixed; this one was
       // missed because every post today is a draft or a placeholder, so the
       // feed has zero items and the map body never runs.
-      categories: post.data.tags,
+      categories: [TOPICS[post.data.topic as TopicId].label, ...post.data.tags],
     })),
     customData: `<language>${SITE.locale.toLowerCase()}</language>`,
   });

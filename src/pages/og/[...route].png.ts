@@ -1,7 +1,8 @@
 import { OGImageRoute } from 'astro-og-canvas';
 import { SITE } from '../../consts';
 import { allPosts } from '../../lib/posts';
-import { SWATCHES, rgb, swatchFor } from '../../lib/palette';
+import { rgb, swatchNamed } from '../../lib/palette';
+import { TOPICS, type TopicId } from '../../consts';
 
 /**
  * Build-time Open Graph cards. Generated once at build and served as static
@@ -31,7 +32,7 @@ const cards: Record<string, Card> = {
     eyebrow: SITE.tagline,
     // The card is dark, so the site card takes the dark-ground variant of
     // the house hue for the same reason the strip does.
-    accent: rgb(SWATCHES[5].boldDark),
+    accent: rgb(swatchNamed('lilac').boldDark),
   },
 };
 
@@ -43,8 +44,9 @@ for (const post of posts) {
     // `zone` is optional now and surfaced nowhere on the site, so the card
     // carries the date instead. Reading .label off an absent zone is what
     // broke the build when the taxonomy came out.
-    eyebrow: `${SITE.title} · ${post.data.pubDate.toISOString().slice(0, 10)}`,
-    accent: rgb(swatchFor(post.id).boldDark),
+    eyebrow: `${SITE.title} · ${TOPICS[post.data.topic as TopicId].label} · ${post.data.pubDate.toISOString().slice(0, 10)}`,
+    // The TOPIC's colour — same as its piece on the board and its row.
+    accent: rgb(swatchNamed(TOPICS[post.data.topic as TopicId].swatch).boldDark),
   };
 }
 

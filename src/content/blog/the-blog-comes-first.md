@@ -2,6 +2,7 @@
 title: "The blog comes first, the room comes second"
 description: "A 3D world can't be indexed, read aloud, or copy-pasted. So this site is a blog with a room built on top — never a room with text inside."
 pubDate: 2026-09-02
+topic: it
 zone: room
 prop: monitor
 tags: ["three.js", "architecture", "seo", "build-log"]

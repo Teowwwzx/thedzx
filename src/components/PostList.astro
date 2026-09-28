@@ -1,55 +1,46 @@
 ---
-import { postUrl, type Post } from '../lib/posts';
-import { swatchFor } from '../lib/palette';
+import { postUrl, topicOf, type Post } from '../lib/posts';
+import { swatchStyle } from '../lib/palette';
 import FormattedDate from './FormattedDate.astro';
 
 interface Props {
   posts: Post[];
-  /**
-   * Heading level for post titles. On a zone page the page <h1> is the zone,
-   * so h2 is right. On the index the list sits under an <h2> section heading,
-   * so post titles must be h3 or the outline says they aren't inside it.
-   */
+  /** Heading level for post titles — see the outline of the page using it. */
   headingLevel?: 2 | 3;
-  /** Overrides the generic "nothing here yet" copy. */
+  /** Titles only. The homepage is meant to be read at a glance. */
+  compact?: boolean;
+  /** Hide the topic label, e.g. on a topic's own page where it is implied. */
+  hideTopic?: boolean;
   emptyState?: string;
 }
 
-const { posts, headingLevel = 2, emptyState } = Astro.props;
+const { posts, headingLevel = 2, compact = false, hideTopic = false, emptyState } = Astro.props;
 const Heading = `h${headingLevel}` as 'h2' | 'h3';
-
-const rows = posts.map((post) => ({ post, swatch: swatchFor(post.id) }));
 ---
 
 {
   posts.length === 0 ? (
-    <p class="note">
-      {emptyState ?? 'Nothing published yet.'}
-    </p>
+    <p class="note">{emptyState ?? 'Nothing here yet.'}</p>
   ) : (
-    <ul class="post-list">
-      {rows.map(({ post, swatch }) => (
-        <li>
-          {/*
-            One real <a href> per post, and one colour per post — derived
-            from the slug, so it is the same here, on the post's own page
-            and on every rebuild. The two custom properties are all the
-            colour rules need; nothing here names a hue.
-          */}
-          <a
-            class="post-item"
-            href={postUrl(post)}
-            style={`--sw: var(--sw-${swatch.name}); --bold: var(--bold-${swatch.name})`}
-          >
-            <p class="post-item-meta">
-              <FormattedDate date={post.data.pubDate} />
-              {post.data.draft && <span class="chip">Draft</span>}
-            </p>
-            <Heading class="post-item-title">{post.data.title}</Heading>
-            <p class="post-item-desc">{post.data.description}</p>
-          </a>
-        </li>
-      ))}
+    <ul class:list={['post-list', compact && 'is-compact']}>
+      {posts.map((post) => {
+        const topic = topicOf(post);
+        return (
+          <li>
+            {/* Colour is the TOPIC's, so a row, its piece on the board and the
+                post's own page all agree on what it is about. */}
+            <a class="post-item" href={postUrl(post)} style={swatchStyle(topic.swatch)}>
+              <p class="post-item-meta">
+                <FormattedDate date={post.data.pubDate} />
+                {!hideTopic && <span class="topic-tag">{topic.label}</span>}
+                {post.data.draft && <span class="chip">Draft</span>}
+              </p>
+              <Heading class="post-item-title">{post.data.title}</Heading>
+              {!compact && <p class="post-item-desc">{post.data.description}</p>}
+            </a>
+          </li>
+        );
+      })}
     </ul>
   )
 }

@@ -2,6 +2,7 @@
 title: "Reading: Designing Data-Intensive Applications"
 description: "Notes from the first six chapters. Slow going, and worth it. Mostly quotes I want to be able to find again."
 pubDate: 2026-07-24
+topic: it
 tags: ["reading"]
 draft: false
 placeholder: true

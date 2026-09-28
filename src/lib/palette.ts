@@ -23,9 +23,11 @@
  *         the floating objects in the hero. NEVER used behind text.
  */
 
+export type SwatchName = 'butter' | 'blush' | 'cyan' | 'mint' | 'amber' | 'lilac' | 'peach';
+
 export interface Swatch {
   /** Token suffix: --sw-<name>. */
-  name: string;
+  name: SwatchName;
   /** Pale background. */
   wash: string;
   /** Saturated partner, used for the dot, the strip and the object in the hero. */
@@ -57,8 +59,22 @@ export const SWATCHES: readonly Swatch[] = [
   { name: 'peach', wash: '#ffcfae', bold: '#c8471c', boldDark: '#ff8557' },
 ] as const;
 
+/** A swatch by name. Every name is in SWATCHES by construction of the type. */
+export function swatchNamed(name: SwatchName): Swatch {
+  return SWATCHES.find((s) => s.name === name)!;
+}
+
 /**
- * Pick a post's colour from its slug.
+ * The two custom properties every colour rule reads, for an inline style.
+ * One helper so no component hand-builds the string and gets one wrong.
+ */
+export function swatchStyle(name: SwatchName): string {
+  return `--sw: var(--sw-${name}); --bold: var(--bold-${name})`;
+}
+
+/**
+ * Pick a colour from a slug. Kept for anything with no topic; posts now take
+ * their TOPIC's colour instead, so colour means something.
  *
  * Deterministic on purpose: a post keeps the same colour across the index,
  * its own page and its OG card, and a rebuild never reshuffles the page.

@@ -1,0 +1,39 @@
+# thedzx community API. Deployed by the thedzx skill:
+#   ~/.claude/skills/thedzx/scripts/deploy-container.sh community ./community
+#
+# This box also runs Odoo, tarot and other people's services. The limits below
+# cap the blast radius, so a flood or a leak here cannot starve them.
+services:
+  api:
+    build: .
+    container_name: thedzx-community
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8095:8000"
+    env_file: .env          # ADMIN_TOKEN — created on the server, never committed
+    environment:
+      DB_PATH: /data/community.db
+      ALLOWED_ORIGINS: "https://thedzx.site,http://localhost:4321,http://localhost:4322,http://localhost:4380"
+      TOPICS: "it,thinking,markets,world,macro"
+      POSTS_JSON: /var/www/thedzx.site/current/posts.json
+    volumes:
+      - ./data:/data
+      # Read-only, and at the SAME path: `current` is an absolute symlink into
+      # releases/, and it has to resolve inside the container after a deploy flips it.
+      - /var/www/thedzx.site:/var/www/thedzx.site:ro
+    mem_limit: 192m
+    memswap_limit: 192m
+    cpus: 0.5
+    pids_limit: 96
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"

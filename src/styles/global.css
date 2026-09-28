@@ -80,8 +80,8 @@
   --sw: var(--sw-lilac);
   --bold: var(--bold-lilac);
 
-  /* How much of a bold hue goes into the hero's colour field. See
-     .hero::before — it is the only difference between the two themes there. */
+  /* How much of a bold hue goes into the homepage's colour field. See
+     .home-hero::before — the only difference between the themes there. */
   --field-strength: 34%;
 
   --code-bg: #1a2029;
@@ -187,7 +187,7 @@
 
 html {
   -webkit-text-size-adjust: 100%;
-  /* The hero is full-bleed via `100vw`, and 100vw INCLUDES the scrollbar on
+  /* The home hero's colour field is full-bleed via `100vw`, and 100vw INCLUDES the scrollbar on
      every OS that still draws one — 15px of horizontal overflow under the
      whole site. `clip`, not `hidden`: hidden would make the viewport a
      scroll container and break scroll anchoring; clip just cuts. */
@@ -273,7 +273,7 @@ main { flex: 1 0 auto; padding-block: 40px 88px; }
   text-decoration: none;
 }
 
-/* --- theme toggle: the only JavaScript on the site --- */
+/* --- theme toggle --- */
 .theme-toggle {
   display: grid;
   place-items: center;
@@ -356,6 +356,8 @@ main { flex: 1 0 auto; padding-block: 40px 88px; }
 
 /* --- prose --- */
 .prose { max-width: var(--measure); }
+/* The article's width without the article's rhythm. */
+.measure { max-width: var(--measure); }
 .prose > * + * { margin-top: 1.1em; }
 .prose h2 { font-size: 25px; margin-top: 2.2em; }
 .prose h3 { font-size: 19px; margin-top: 1.8em; }
@@ -425,66 +427,6 @@ main { flex: 1 0 auto; padding-block: 40px 88px; }
 
 .table-scroll { overflow-x: auto; }
 
-/* --- masthead --- */
-.masthead h1 {
-  /* The one big gesture on the page. 11vw is deliberate: it fills the
-     viewport width at every size instead of picking a "safe" middle. */
-  font-size: clamp(52px, 11vw, 132px);
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  margin-block: 20px 26px;
-}
-
-.masthead-lede {
-  color: var(--ink-2);
-  font-family: var(--font-ui);
-  font-size: clamp(19px, 2.1vw, 24px);
-  font-weight: 400;
-  line-height: 1.45;
-  letter-spacing: -0.012em;
-  max-width: 34ch;
-  margin: 0;
-}
-
-/* --- topics --- */
-.topic-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 1px;
-  background: var(--line-soft);
-  border-block: 1px solid var(--line-soft);
-}
-
-@media (min-width: 620px) { .topic-list { grid-template-columns: repeat(2, 1fr); } }
-
-.topic-list a {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 13px 2px;
-  background: var(--bg);
-  text-decoration: none;
-  color: inherit;
-}
-
-.topic-list a:hover .topic-name { color: var(--accent-ink); }
-
-.topic-name {
-  font-family: var(--font-ui);
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: -0.01em;
-}
-
-.topic-count {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--muted);
-}
-
 /* --- post list ---
    The row's hover/focus treatment lives in the COLOUR section below, which
    is also where its padding and margins are set. Keep them together. */
@@ -517,7 +459,7 @@ main { flex: 1 0 auto; padding-block: 40px 88px; }
 
 .post-item-desc { margin: 0; color: var(--ink-2); font-size: 17px; line-height: 1.55; max-width: 60ch; }
 
-/* --- zone chip --- */
+/* --- chip --- */
 .chip {
   display: inline-block;
   font-family: var(--font-mono);
@@ -531,45 +473,7 @@ main { flex: 1 0 auto; padding-block: 40px 88px; }
   text-decoration: none;
 }
 
-a.chip:hover { background: var(--accent-ink); color: var(--bg); }
-
 .chip.ghost { background: var(--surface-2); color: var(--muted); }
-
-/* --- zone cards --- */
-.zone-grid { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
-@media (min-width: 640px) { .zone-grid { grid-template-columns: repeat(2, 1fr); } }
-
-.zone-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  height: 100%;
-  padding: 18px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  text-decoration: none;
-  color: inherit;
-}
-
-.zone-card:hover { border-color: var(--accent); }
-.zone-card h3 { font-size: 17px; }
-.zone-card p { margin: 0; font-size: 14.5px; color: var(--ink-2); line-height: 1.5; }
-
-.zone-card .rail {
-  display: flex;
-  justify-content: space-between;
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  letter-spacing: 0.1em;
-  color: var(--muted);
-  border-bottom: 1px solid var(--line-soft);
-  padding-bottom: 8px;
-}
-
-.zone-card .rail .elev { color: var(--accent); }
-
-.zone-card .count { margin-top: auto; padding-top: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
 
 /* --- misc --- */
 .skip-link {
@@ -698,136 +602,6 @@ a.chip:hover { background: var(--accent-ink); color: var(--bg); }
 
 .site-header .spectrum,
 .site-footer .spectrum { height: 5px; }
-
-/* --- the hero -----------------------------------------------------
-   Full-bleed: the colour has to reach both edges or it reads as a card
-   floating in the page rather than as the top of the site. The paired
-   negative margin and padding keep the TEXT exactly where the shell
-   would have put it while the BOX spans the viewport. `overflow-x: clip`
-   on <html> is what makes that safe — see the note there.
-   ------------------------------------------------------------------ */
-.hero {
-  position: relative;
-  isolation: isolate;
-  margin-inline: calc(50% - 50vw);
-  padding-inline: calc(50vw - 50%);
-  overflow: clip;
-}
-
-/* The always-there colour, and the fallback when there is no WebGL, no
-   JavaScript, or the visitor asked for no motion. Soft fields rather than
-   a flat wash, so the huge type has something to sit against without ever
-   getting dark enough to fight it.
-
-   --field-strength carries the one difference between themes: the same
-   hues need more weight against ink than against paper to read as colour
-   at all. */
-.hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    radial-gradient(46% 62% at 84% 20%, color-mix(in oklab, var(--bold-lilac) var(--field-strength), transparent), transparent 70%),
-    radial-gradient(44% 58% at 58% 96%, color-mix(in oklab, var(--bold-cyan) var(--field-strength), transparent), transparent 70%),
-    radial-gradient(40% 54% at 6% 72%, color-mix(in oklab, var(--bold-butter) var(--field-strength), transparent), transparent 70%),
-    radial-gradient(34% 44% at 30% 4%, color-mix(in oklab, var(--bold-blush) var(--field-strength), transparent), transparent 72%),
-    radial-gradient(30% 50% at 99% 70%, color-mix(in oklab, var(--bold-mint) var(--field-strength), transparent), transparent 70%);
-}
-
-/* Browsers without color-mix() get the pale washes instead of nothing. */
-@supports not (background: color-mix(in oklab, red 50%, transparent)) {
-  .hero::before {
-    background:
-      radial-gradient(46% 62% at 84% 20%, var(--sw-lilac), transparent 70%),
-      radial-gradient(44% 58% at 58% 96%, var(--sw-cyan), transparent 70%),
-      radial-gradient(40% 54% at 6% 72%, var(--sw-butter), transparent 70%),
-      radial-gradient(34% 44% at 30% 4%, var(--sw-blush), transparent 72%),
-      radial-gradient(30% 50% at 99% 70%, var(--sw-mint), transparent 70%);
-  }
-}
-
-.masthead { padding-block: clamp(44px, 11vh, 108px) 0; }
-
-/* With no stage there is nothing below the lede, and the colour field ends
-   flush against its last line. Give the hero the space the stage's own
-   margin would have supplied. `inset: 0` on ::before resolves against the
-   padding box, so the colour grows with it. */
-:root:not(.stage-ok) .hero { padding-bottom: clamp(28px, 6vh, 64px); }
-
-/* The three.js canvas is injected here — a band of its own beneath the
-   headline, never behind it. A saturated object passing under 132px of
-   near-black type lands around 1.2:1, and near-white type in dark mode is
-   no better; there is no object palette that survives both. See the note
-   at the top of src/scenery/hero.ts. */
-.hero-stage {
-  /* Hidden until something on the page says a canvas is actually coming.
-     No JavaScript, or no WebGL, and this is dead space at the top of the
-     page — so the DEFAULT is collapsed and .stage-ok opens it. */
-  display: none;
-}
-
-:root.stage-ok .hero-stage {
-  display: block;
-  position: relative;
-  height: clamp(232px, 34vh, 400px);
-  margin-top: clamp(18px, 3.5vh, 40px);
-  margin-bottom: clamp(28px, 6vh, 64px);
-  /* Out to the hero's own edges, not the text column's: 50% here is half
-     the hero's CONTENT box, so this cancels the hero's padding exactly. */
-  margin-inline: calc(50% - 50vw);
-  /* Inert by default. The script opts in only when there are posts for the
-     objects to open, so an empty band can never swallow a click. */
-  pointer-events: none;
-  /* The space is reserved from the first paint — the class is set by an
-     inline script above the hero, not after the module loads — so nothing
-     below jumps when the canvas arrives. Only the fade is deferred. */
-  opacity: 0;
-  transition: opacity 500ms ease;
-}
-
-:root.stage-ok .hero-stage[data-ready] { opacity: 1; }
-:root.stage-ok .hero-stage[data-interactive] { pointer-events: auto; }
-
-/* The title of whatever the pointer is on. Real text in a real element —
-   it gets the page font and the palette tokens, and costs no draw call.
-   Positioned from JS; `top` is its BOTTOM edge, because of the translate. */
-.hero-label {
-  position: absolute;
-  left: 0;
-  top: 0;
-  transform: translate(-50%, -100%);
-  max-width: min(300px, 78%);
-  padding: 6px 10px 7px;
-  border-radius: 3px;
-  background: var(--sw);
-  color: var(--sw-ink);
-  font-family: var(--font-ui);
-  font-size: 12.5px;
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.005em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  /* Never a hit target: it sits directly over the object it names, and
-     taking the pointer would make the object flicker on and off. */
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 140ms ease;
-}
-
-.hero-label[data-shown] { opacity: 1; }
-
-.hero-stage canvas {
-  width: 100% !important;
-  height: 100% !important;
-  max-width: none;
-}
-
-@media (max-width: 700px) {
-  :root.stage-ok .hero-stage { height: 210px; }
-}
 
 /* --- a swatch dot -------------------------------------------------- */
 .dot {
@@ -961,3 +735,610 @@ a.chip:hover { background: var(--accent-ink); color: var(--bg); }
   text-transform: uppercase;
   margin: 0 0 6px;
 }
+
+
+/* ==================================================================
+   THE PUZZLE HOMEPAGE
+   ==================================================================
+   One board, one region per topic, one piece per post. The board is
+   the table of contents, so the words around it are kept few.
+   ================================================================== */
+
+.home-hero {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  gap: clamp(24px, 4vw, 48px);
+  grid-template-areas:
+    'intro'
+    'board'
+    'side';
+  padding-block: clamp(20px, 5vh, 56px) clamp(32px, 6vh, 64px);
+}
+
+/* The colour field behind it — full-bleed, so it reads as the top of the
+   site rather than a card. `overflow-x: clip` on <html> keeps 100vw from
+   adding a horizontal scrollbar. */
+.home-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0 calc(50% - 50vw);
+  z-index: -1;
+  background:
+    radial-gradient(40% 55% at 82% 18%, color-mix(in oklab, var(--bold-lilac) var(--field-strength), transparent), transparent 70%),
+    radial-gradient(38% 50% at 12% 88%, color-mix(in oklab, var(--bold-mint) var(--field-strength), transparent), transparent 70%),
+    radial-gradient(34% 44% at 24% 8%, color-mix(in oklab, var(--bold-blush) var(--field-strength), transparent), transparent 72%),
+    radial-gradient(30% 50% at 98% 80%, color-mix(in oklab, var(--bold-amber) var(--field-strength), transparent), transparent 70%);
+  opacity: 0.55;
+  /* Fade out downwards instead of stopping in a hard line under the hero. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent);
+  mask-image: linear-gradient(to bottom, #000 62%, transparent);
+  pointer-events: none;
+}
+
+@supports not (background: color-mix(in oklab, red 50%, transparent)) {
+  .home-hero::before { background: none; }
+}
+
+@media (min-width: 900px) {
+  .home-hero {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    grid-template-areas:
+      'intro board'
+      'side  board';
+    grid-template-rows: auto 1fr;
+    align-items: start;
+  }
+}
+
+.hh-intro { grid-area: intro; }
+.hh-board { grid-area: board; }
+.hh-side { grid-area: side; display: flex; flex-direction: column; gap: 22px; }
+
+.hh-title {
+  font-size: clamp(56px, 9vw, 108px);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
+  margin: 18px 0 16px;
+}
+
+.hh-lede {
+  color: var(--ink-2);
+  font-family: var(--font-ui);
+  font-size: clamp(17px, 1.6vw, 20px);
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  max-width: 32ch;
+  margin: 0;
+}
+
+/* --- the board ---------------------------------------------------- */
+.board { margin: 0; }
+
+.board svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  /* Pieces are links; a tap should not flash the whole SVG grey. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.piece { cursor: pointer; outline: none; }
+
+.piece path {
+  /* The seam: every piece is stroked in the page colour, so the joins read
+     as cuts in one picture rather than as outlines drawn on top. */
+  stroke: var(--bg);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  transition: fill 180ms ease, opacity 180ms ease;
+}
+
+.piece.is-filled path { fill: var(--bold); }
+
+/* An empty piece still belongs to its topic: a faint tint and a dashed rim,
+   so each region is visible as a shape before it has any posts in it. */
+.piece.is-empty path {
+  fill: color-mix(in oklab, var(--bold) 13%, var(--bg));
+  stroke: color-mix(in oklab, var(--bold) 55%, var(--bg));
+  stroke-width: 1.6;
+  stroke-dasharray: 5 5;
+}
+
+.piece .glyph {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+.piece .plus {
+  fill: color-mix(in oklab, var(--bold) 70%, var(--bg));
+  font: 600 30px/1 var(--font-ui);
+  text-anchor: middle;
+  dominant-baseline: central;
+  opacity: 0;
+  transition: opacity 160ms ease;
+  pointer-events: none;
+}
+
+/* Lift. transform-box makes the piece move around its own centre rather
+   than the SVG's origin. */
+.piece {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1), filter 200ms ease;
+}
+
+.piece.is-filled:hover,
+.piece.is-filled:focus-visible {
+  transform: translateY(-4px) scale(1.03);
+  filter: drop-shadow(0 8px 10px color-mix(in oklab, var(--bold) 45%, transparent));
+}
+
+.piece.is-empty:hover path,
+.piece.is-empty:focus-visible path {
+  fill: color-mix(in oklab, var(--bold) 28%, var(--bg));
+  stroke-dasharray: none;
+}
+
+.piece.is-empty:hover .plus,
+.piece.is-empty:focus-visible .plus { opacity: 1; }
+
+/* Keyboard focus: a ring in the ink colour, drawn by the path itself. */
+.piece:focus-visible path {
+  stroke: var(--ink);
+  stroke-width: 3.5;
+  stroke-dasharray: none;
+}
+
+/* A piece a reader asked for: filled with the wash, and a pin. */
+.piece.is-asked path {
+  fill: color-mix(in oklab, var(--bold) 34%, var(--bg));
+  stroke: var(--bold);
+  stroke-dasharray: none;
+}
+
+.piece.is-asked .plus { opacity: 1; fill: var(--bold); font-weight: 800; }
+
+/* Pointing at a topic dims every other region. One rule per topic because
+   CSS cannot compare two attribute values; there are five. */
+.board .piece { transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1), filter 200ms ease, opacity 200ms ease; }
+.board[data-focus='it'] .piece:not([data-topic='it']),
+.board[data-focus='thinking'] .piece:not([data-topic='thinking']),
+.board[data-focus='markets'] .piece:not([data-topic='markets']),
+.board[data-focus='world'] .piece:not([data-topic='world']),
+.board[data-focus='macro'] .piece:not([data-topic='macro']) {
+  opacity: 0.22;
+}
+
+.board-count {
+  margin-top: 10px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: right;
+}
+
+/* Settle in. Staggered by reading order; the END state is the visible one,
+   so a browser that skips the animation still shows the whole board. */
+@media (prefers-reduced-motion: no-preference) {
+  .piece {
+    animation: piece-in 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: calc(var(--i, 0) * 16ms);
+  }
+}
+
+@keyframes piece-in {
+  from {
+    opacity: 0;
+    transform: translateY(-14px) rotate(-5deg) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* In dark mode the bold hues are light, so the glyph flips to dark ink. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .piece .glyph { stroke: var(--sw-ink); }
+}
+:root[data-theme='dark'] .piece .glyph { stroke: var(--sw-ink); }
+
+/* --- the piece panel ---------------------------------------------- */
+.piece-panel {
+  min-height: 118px;
+  background: color-mix(in oklab, var(--surface) 78%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+/* The inner block carries the piece's colour, so the rule on its left
+   changes with whatever the pointer is on. */
+.piece-panel > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  border-left: 5px solid var(--bold);
+}
+
+.pp-kicker {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.pp-title {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: clamp(19px, 2vw, 23px);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--ink);
+  text-decoration: none;
+  margin: 0;
+}
+
+a.pp-title:hover { color: var(--ink); text-decoration: underline; text-decoration-thickness: 2px; text-decoration-color: var(--bold); }
+.pp-title.is-empty { color: var(--muted); font-weight: 600; }
+.pp-title.is-question::before { content: '“'; }
+.pp-title.is-question::after { content: '”'; }
+
+.pp-topic {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.pp-actions { margin: 4px 0 0; }
+
+.dot.is-hollow { background: transparent; box-shadow: inset 0 0 0 2px var(--bold); }
+
+/* --- topic chips and the legend ------------------------------------ */
+.legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.legend-row { margin-top: 48px; }
+
+.topic-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 7px 12px 8px;
+  border-radius: 999px;
+  background: var(--sw);
+  color: var(--sw-ink);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+a.topic-chip:hover,
+a.topic-chip:focus-visible {
+  color: var(--sw-ink);
+  transform: translateY(-2px);
+  box-shadow: 0 3px 0 var(--bold);
+}
+
+.tc-zh { font-weight: 500; opacity: 0.75; }
+
+.tc-count {
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--sw-ink);
+  color: var(--sw);
+  text-align: center;
+}
+
+.section-chip {
+  display: inline-block;
+  margin: 0 0 6px;
+  padding: 5px 12px 6px;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.home-latest { margin-top: clamp(24px, 5vh, 56px); }
+
+/* --- post rows: compact, and the topic tag ------------------------- */
+.post-list.is-compact .post-item { padding-block: 18px; }
+.post-list.is-compact .post-item-title { font-size: clamp(20px, 2.4vw, 26px); margin: 0; }
+.post-list.is-compact .post-item-meta { margin-bottom: 5px; }
+
+.topic-tag {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.post-item:hover .topic-tag,
+.post-item:focus-visible .topic-tag { color: var(--sw-ink); }
+
+/* ==================================================================
+   COMMUNITY
+   Hidden until the community API answers. `[hidden]` is !important
+   above, so these rules can style freely without ever showing a
+   dead form.
+   ================================================================== */
+
+/* --- asked by readers ---------------------------------------------- */
+.asked { margin-top: clamp(40px, 7vh, 72px); }
+
+.asked-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 720px) { .asked-list { grid-template-columns: repeat(2, 1fr); } }
+
+.asked-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: 'q vote' 'meta vote';
+  gap: 4px 14px;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--sw);
+  color: var(--sw-ink);
+}
+
+.asked-q {
+  grid-area: q;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.asked-meta { grid-area: meta; margin: 0; font-family: var(--font-ui); font-size: 12.5px; opacity: 0.8; }
+.asked-vote { grid-area: vote; }
+.asked-empty { font-family: var(--font-ui); color: var(--muted); }
+
+/* --- shared buttons and inputs -------------------------------------- */
+.asked-vote,
+.pp-vote,
+.react,
+.ask-form button,
+.comment-form button,
+.join-form button {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 16px 10px;
+  font: 700 13.5px/1 var(--font-ui);
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  background: var(--ink);
+  color: var(--bg);
+  transition: transform 140ms ease, opacity 140ms ease;
+}
+
+.asked-vote:hover, .pp-vote:hover, .react:hover,
+.ask-form button:hover, .comment-form button:hover, .join-form button:hover { transform: translateY(-1px); }
+
+.asked-vote[aria-pressed='true'] { background: transparent; color: inherit; box-shadow: inset 0 0 0 2px currentColor; cursor: default; }
+
+button:disabled { opacity: 0.55; cursor: progress; transform: none !important; }
+
+.ask-form input,
+.ask-form select,
+.comment-form input,
+.comment-form textarea,
+.join-form input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 400 16px/1.4 var(--font-ui);
+}
+
+.ask-form input:focus,
+.ask-form select:focus,
+.comment-form input:focus,
+.comment-form textarea:focus,
+.join-form input:focus { outline: none; border-color: var(--ink); }
+
+/* The honeypot: present in the form, invisible to people and to AT. */
+.hp { position: absolute !important; left: -10000px !important; width: 1px; height: 1px; opacity: 0; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- ask for a piece ---------------------------------------------- */
+.ask {
+  margin-top: clamp(40px, 7vh, 72px);
+  padding: clamp(22px, 4vw, 36px);
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  scroll-margin-top: 24px;
+}
+
+.ask-title, .join-title, .discuss-title {
+  font-size: clamp(26px, 3.4vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  margin: 0 0 6px;
+}
+
+.ask-lede, .join-lede { margin: 0 0 20px; color: var(--ink-2); font-family: var(--font-ui); font-size: 16px; }
+
+.ask-form { display: grid; gap: 14px; }
+@media (min-width: 720px) {
+  .ask-form { grid-template-columns: 1fr 2fr 1fr auto; align-items: end; }
+  .ask-status { grid-column: 1 / -1; }
+}
+
+.ask-field { display: grid; gap: 6px; font-family: var(--font-ui); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.ask-field em { font-style: normal; font-weight: 500; text-transform: none; letter-spacing: 0; }
+.ask-status, .comment-status { margin: 0; min-height: 1.4em; font-family: var(--font-ui); font-size: 14px; color: var(--ink-2); }
+
+/* --- join (every page) ---------------------------------------------- */
+.join {
+  margin: clamp(40px, 8vh, 88px) 0 clamp(32px, 6vh, 56px);
+  padding: clamp(24px, 5vw, 44px);
+  background: var(--sw-butter);
+  color: var(--sw-ink);
+}
+
+.join-title { color: var(--sw-ink); }
+.join-lede { color: var(--sw-ink); opacity: 0.8; }
+
+.join-form { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; max-width: 520px; }
+.join-form input { flex: 1 1 220px; border-color: color-mix(in oklab, var(--sw-ink) 25%, transparent); background: #fffdf2; color: var(--sw-ink); }
+.join-form input:focus { border-color: var(--sw-ink); }
+.join-form button { background: var(--sw-ink); color: var(--sw-butter); }
+.join-rss { color: var(--sw-ink); font-family: var(--font-ui); font-weight: 700; text-decoration-thickness: 2px; }
+.join-rss:hover { color: var(--sw-ink); }
+
+.nav-join {
+  padding: 5px 12px 6px !important;
+  border-radius: 999px;
+  background: var(--sw-butter);
+  color: var(--sw-ink) !important;
+  font-weight: 700;
+  border-bottom: 0 !important;
+}
+
+.site-header .bar { gap: 16px; }
+.site-header .site-nav { margin-left: auto; align-items: center; font-family: var(--font-ui); font-size: 13.5px; }
+
+/* --- a post: reactions and thoughts -------------------------------- */
+.post-foot { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--line); }
+.post-tags { display: flex; gap: 8px; flex-wrap: wrap; margin: 0; }
+
+.post-community { margin-top: 36px; }
+
+.reactions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 36px; }
+
+.react {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--sw);
+  color: var(--sw-ink);
+}
+
+.react[aria-pressed='true'] { background: var(--bold); color: #fff; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .react[aria-pressed='true'] { color: var(--sw-ink); } }
+:root[data-theme='dark'] .react[aria-pressed='true'] { color: var(--sw-ink); }
+
+.react-count { font-size: 12px; opacity: 0.8; }
+
+.discuss-count { color: var(--muted); font-weight: 600; font-size: 0.6em; vertical-align: 0.35em; }
+
+.comments { list-style: none; margin: 0 0 20px; padding: 0; }
+.comment { padding: 14px 0; border-top: 1px solid var(--line-soft); }
+.comment:first-child { border-top: 0; }
+.comment-meta { margin: 0 0 4px; font-family: var(--font-ui); font-size: 13px; color: var(--muted); }
+.comment-meta strong { color: var(--ink); }
+.comment-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.comment-empty { color: var(--muted); font-family: var(--font-ui); font-size: 15px; padding: 8px 0; }
+
+.comment-form { display: grid; gap: 10px; }
+.comment-form input { max-width: 260px; }
+.comment-form textarea { resize: vertical; min-height: 96px; }
+.comment-row { display: flex; align-items: center; gap: 14px; }
+
+/* --- walking a region ---------------------------------------------- */
+.piece-nav {
+  margin-top: 40px;
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 640px) { .piece-nav { grid-template-columns: 1fr 1fr; } }
+
+.piece-nav-link {
+  display: grid;
+  gap: 4px;
+  padding: 16px 18px;
+  background: var(--sw);
+  color: var(--sw-ink);
+  text-decoration: none;
+  transition: transform 160ms ease;
+}
+
+.piece-nav-link:hover { color: var(--sw-ink); transform: translateY(-2px); }
+.piece-nav-link.is-next { text-align: right; }
+.pn-dir { font-family: var(--font-ui); font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.75; }
+.pn-title { font-family: var(--font-ui); font-weight: 700; font-size: 17px; line-height: 1.25; letter-spacing: -0.01em; }
+.piece-nav-home { grid-column: 1 / -1; font-family: var(--font-ui); font-size: 14px; font-weight: 600; }
+
+/* --- a topic's own page -------------------------------------------- */
+.topic-head { padding-block: clamp(24px, 6vh, 64px) 20px; }
+.topic-band { height: 12px; background: var(--bold); border: 0; margin: 0 0 26px; }
+.topic-title { font-size: clamp(44px, 8vw, 88px); font-weight: 800; letter-spacing: -0.045em; line-height: 1; margin: 0; }
+.topic-zh { display: block; font-size: 0.42em; font-weight: 600; letter-spacing: 0; color: var(--bold); margin-top: 10px; }
+.topic-count { font-family: var(--font-ui); font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin: 14px 0 0; }
+
+/* --- ideas ----------------------------------------------------------- */
+.ideas-head { padding-block: clamp(24px, 6vh, 64px) 28px; }
+.ideas-title { font-size: clamp(44px, 8vw, 88px); font-weight: 800; letter-spacing: -0.045em; line-height: 1; margin: 0 0 14px; }
+.ideas-lede { margin: 0; max-width: 46ch; color: var(--ink-2); font-family: var(--font-ui); font-size: 18px; line-height: 1.45; }
+
+.idea-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+@media (min-width: 720px) { .idea-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.idea {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 22px;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-top: 8px solid var(--bold);
+}
+
+.idea-meta { margin: 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.idea-status { padding: 3px 9px 4px; border-radius: 999px; background: var(--sw); color: var(--sw-ink); font: 700 11px/1 var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; }
+.idea-title { font-size: 24px; margin: 4px 0 0; letter-spacing: -0.025em; }
+.idea-summary { margin: 0; color: var(--ink-2); font-size: 16px; line-height: 1.5; }
+.idea-foot { margin: auto 0 0; padding-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-family: var(--font-ui); }
+.idea-price { font-size: 14px; color: var(--muted); }
+.idea-price strong { font-size: 22px; color: var(--ink); letter-spacing: -0.02em; }
+.idea-cta { padding: 9px 16px 10px; border-radius: 999px; background: var(--ink); color: var(--bg); font: 700 13.5px/1 var(--font-ui); text-decoration: none; }
+.idea-cta:hover { color: var(--bg); opacity: 0.88; }

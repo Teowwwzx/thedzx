@@ -1,0 +1,25 @@
+---
+import { swatchStyle } from '../lib/palette';
+import { topicUrl } from '../lib/posts';
+import type { Topic } from '../consts';
+
+interface Props {
+  topic: Topic;
+  count?: number;
+  /** Render as a plain span, e.g. when already on the topic's page. */
+  static?: boolean;
+}
+const { topic, count, static: isStatic = false } = Astro.props;
+const Tag = isStatic ? 'span' : 'a';
+---
+
+<Tag
+  class="topic-chip"
+  href={isStatic ? undefined : topicUrl(topic)}
+  style={swatchStyle(topic.swatch)}
+  data-topic-chip={topic.id}
+>
+  <span class="tc-en">{topic.label}</span>
+  <span class="tc-zh" lang="zh">{topic.zh}</span>
+  {count !== undefined && <span class="tc-count tabular">{count}</span>}
+</Tag>

@@ -122,7 +122,13 @@ for (const [id, s] of Object.entries(specs)) {
 
 // Every prop a zone advertises must have a hotspot, or a post attached to it
 // is unreachable in the world with nothing to say so.
-const consts = await src('src/consts.ts');
+const constsFile = await src('src/consts.ts');
+// Only ZONE_LIST. consts.ts also holds TOPIC_LIST, whose entries have an `id`
+// too; a whole-file regex once read topic "it" as a zone and reached forward
+// into the zones' props to pair them up.
+const zoneStart = constsFile.indexOf('export const ZONE_LIST');
+const consts = constsFile.slice(zoneStart, constsFile.indexOf('] as const satisfies readonly Zone[]', zoneStart));
+if (zoneStart === -1 || !consts) throw new Error('check-world: could not find ZONE_LIST in src/consts.ts');
 for (const block of consts.matchAll(/id: '(\w+)',[\s\S]*?props: \[([^\]]*)\]/g)) {
   const zone = block[1];
   if (zone === 'tv') continue;

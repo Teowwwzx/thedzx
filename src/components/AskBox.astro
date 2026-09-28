@@ -1,0 +1,36 @@
+---
+/**
+ * Ask for a piece — a reader's question becomes an empty piece on the board.
+ *
+ * Hidden until the community script confirms the API answers (the
+ * `community-only` class), so nobody is ever shown a form that cannot send.
+ * Requests are reviewed before they appear; the thank-you says so.
+ */
+import { TOPIC_LIST } from '../consts';
+---
+
+<section class="ask community-only" id="ask" aria-labelledby="ask-title" hidden>
+  <h2 id="ask-title" class="ask-title">Ask for a piece</h2>
+  <p class="ask-lede">What should we figure out together? Good questions become pieces on the board.</p>
+
+  <form class="ask-form" data-ask-form novalidate>
+    <label class="ask-field">
+      <span>Topic</span>
+      <select name="topic" required>
+        {TOPIC_LIST.map((t) => <option value={t.id}>{t.label} · {t.zh}</option>)}
+      </select>
+    </label>
+    <label class="ask-field ask-q">
+      <span>Your question</span>
+      <input name="question" required minlength="8" maxlength="140" placeholder="How does … actually work?" />
+    </label>
+    <label class="ask-field">
+      <span>Name <em>(optional)</em></span>
+      <input name="name" maxlength="30" autocomplete="nickname" placeholder="Anonymous" />
+    </label>
+    {/* Honeypot. Hidden from people and from assistive tech; bots fill it. */}
+    <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+    <button type="submit">Ask</button>
+    <p class="ask-status" data-ask-status role="status"></p>
+  </form>
+</section>

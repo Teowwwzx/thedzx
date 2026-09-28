@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Community — review</title>
+<style>
+  :root { --bg:#f7f7f5; --ink:#101010; --muted:#6c6e74; --line:#d9d9d5; --ok:#188a50; --no:#c8471c; color-scheme: light dark; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#121211; --ink:#f2f2ef; --muted:#8d8d87; --line:#34342f; --ok:#4fd48d; --no:#ff8557; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 28px; letter-spacing: -.02em; margin: 0 0 16px; }
+  h2 { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 32px 0 8px; }
+  form.login { display:flex; gap:8px; }
+  input { flex:1; padding:10px 12px; border:1.5px solid var(--line); border-radius:8px; background:transparent; color:inherit; font:inherit; }
+  button { padding:8px 14px; border:0; border-radius:999px; background:var(--ink); color:var(--bg); font:600 14px/1 system-ui, sans-serif; cursor:pointer; }
+  button.ok { background: var(--ok); } button.no { background: var(--no); } button.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line); }
+  ul { list-style:none; margin:0; padding:0; }
+  li { padding:12px 0; border-top:1px solid var(--line); display:grid; gap:6px; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .q { font-weight: 600; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .hidden { opacity:.45; }
+  #msg { min-height: 1.5em; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Community — review</h1>
+  <form class="login" id="login">
+    <input id="token" type="password" autocomplete="current-password" placeholder="Admin token" required>
+    <button type="submit">Open</button>
+  </form>
+  <p id="msg"></p>
+
+  <h2>Asked, waiting for review</h2>
+  <ul id="pending"></ul>
+  <h2>On the board</h2>
+  <ul id="open"></ul>
+  <h2>Latest thoughts</h2>
+  <ul id="comments"></ul>
+</main>
+<script>
+  // Everything reader-typed goes in via textContent. The token lives in this
+  // tab's sessionStorage only and is sent in a header, never in a URL.
+  const $ = (s) => document.querySelector(s);
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+  const token = () => sessionStorage.getItem('t') || '';
+  async function call(path, body) {
+    const r = await fetch(path, { method: body ? 'POST' : 'GET', headers: { 'x-admin-token': token(), ...(body ? { 'content-type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+    if (!r.ok) throw new Error(r.status === 403 ? 'Wrong token.' : 'HTTP ' + r.status);
+    return r.json();
+  }
+  function btn(label, cls, fn) { const b = el('button', cls, label); b.type = 'button'; b.onclick = async () => { b.disabled = true; try { await fn(); await load(); } catch (e) { $('#msg').textContent = e.message; b.disabled = false; } }; return b; }
+  async function load() {
+    if (!token()) return;
+    let q;
+    try { q = await call('/api/admin/queue'); } catch (e) { $('#msg').textContent = e.message; return; }
+    $('#msg').textContent = `${q.pending.length} waiting · ${q.open.length} on the board · ${q.comments.length} recent thoughts`;
+    $('#pending').replaceChildren(...(q.pending.length ? q.pending.map((r) => {
+      const li = el('li');
+      li.append(el('div', 'q', r.question), el('div', 'meta', `${r.topic} · ${r.name || 'anonymous'} · ${r.created_at}`));
+      const row = el('div', 'row');
+      row.append(btn('Put on the board', 'ok', () => call(`/api/admin/requests/${r.id}`, { action: 'approve' })), btn('Reject', 'no', () => call(`/api/admin/requests/${r.id}`, { action: 'reject' })));
+      li.append(row); return li;
+    }) : [el('li', 'meta', 'Nothing waiting.')]));
+    $('#open').replaceChildren(...(q.open.length ? q.open.map((r) => {
+      const li = el('li');
+      li.append(el('div', 'q', r.question), el('div', 'meta', `${r.topic} · ${r.name || 'anonymous'} · ${r.votes} want this`));
+      const row = el('div', 'row');
+      row.append(btn('Answered — take off the board', 'ghost', () => {
+        const post = prompt('Slug of the post that answers it (optional):') || null;
+        return call(`/api/admin/requests/${r.id}`, { action: 'answer', post });
+      }), btn('Remove', 'no', () => call(`/api/admin/requests/${r.id}`, { action: 'reject' })));
+      li.append(row); return li;
+    }) : [el('li', 'meta', 'The board has no open questions.')]));
+    $('#comments').replaceChildren(...(q.comments.length ? q.comments.map((c) => {
+      const li = el('li', c.status === 'hidden' ? 'hidden' : '');
+      li.append(el('div', 'meta', `${c.name} on /blog/${c.slug}/ · ${c.created_at} · ${c.status}`), el('div', null, c.text));
+      const row = el('div', 'row');
+      row.append(c.status === 'hidden'
+        ? btn('Show again', 'ghost', () => call(`/api/admin/comments/${c.id}`, { action: 'show' }))
+        : btn('Hide', 'no', () => call(`/api/admin/comments/${c.id}`, { action: 'hide' })));
+      li.append(row); return li;
+    }) : [el('li', 'meta', 'No thoughts yet.')]));
+  }
+  $('#login').onsubmit = (e) => { e.preventDefault(); sessionStorage.setItem('t', $('#token').value.trim()); $('#token').value = ''; load(); };
+  load();
+</script>
+</body>
+</html>

@@ -11,13 +11,28 @@ NOT Cloudflare Workers/Pages — there is no wrangler in this repo, and
 
 ## What this project is
 
-A personal blog that doubles as an explorable 3D world. **It is a blog with a
-3D navigation skin, not a 3D world containing text.** Every decision follows
-from that. See `LOCATIONS.md` for scope and the roadmap stages.
+A notes-and-community site. **The homepage is a puzzle**: one region per
+topic, one piece per post, empty pieces for what is not written yet, and "?"
+pieces for questions readers asked (after review). Every piece is a real
+`<a href>` in an SVG — the board works with no JavaScript and is crawlable.
 
-An ordinary static blog. **The 3D world is ON HOLD** — `src/world/` is intact
-and `npm run world` still validates it, but nothing imports it, so the built
-site ships no JavaScript at all. Do not wire it back in without being asked.
+| Part | Where |
+|---|---|
+| Topics (single source of truth) | `src/consts.ts` → `TOPIC_LIST` |
+| The board | `src/lib/puzzle.ts` (pure, gated by `npm run puzzle`), `src/components/Puzzle.astro` |
+| Board + community client | `src/scripts/` — ~9 KB, homepage and post pages only |
+| Community API | `community/` → container on the droplet → https://community.thedzx.site |
+| Settings (Kit form, quote form, API URL) | `site.config.mjs` — nothing secret, ever |
+| Shipping, new subdomain apps, moderation | the `thedzx` skill: `~/.claude/skills/thedzx/` |
+
+**Parked, not deleted:** the walkable 3D world (`src/world/`) and the floating
+desk objects (`src/scenery/`). Nothing imports either; `npm run world` and
+`npm run framing` keep checking them so they do not rot, and `npm run budget`
+fails if three.js reappears in the build. Do not wire them back in without
+being asked.
+
+**Voice:** humble, learning together, few words. Never put the author's
+income goals, subscriber targets or "wealth" framing on the site.
 
 ## Pinned versions — do not upgrade in passing
 
@@ -117,15 +132,21 @@ camera positions and easing, what feels fun — and all of the writing.
 ## Commands
 
 ```
-npm run dev       # drafts visible
-npm run build     # drafts excluded
+npm run dev       # drafts and example ideas visible
+npm run build     # drafts and example ideas excluded
 npm run check     # astro check — must stay at 0 errors
-npm run budget    # asset budget gate; FAILS if an article route ships JS
-npm run world     # world structure gate
-npm run verify    # all four, in order
-npm run deploy    # build, budget gate, rsync a release, flip the symlink
+npm run palette   # colour tokens in sync with src/lib/palette.ts; contrast
+npm run puzzle    # every post on one piece, regions whole, board stable
+npm run framing   # parked desk objects stay in their band
+npm run world     # parked world structure
+npm run budget    # JS per route (follows imports), no framework-sized chunk
+npm run verify    # all of the above, in order
+npm run deploy    # build, gates, rsync a release, flip the symlink
 ./deploy/install-nginx.sh   # install the server block (rare, separate on purpose)
 ```
+
+The community API deploys separately, with the skill:
+`~/.claude/skills/thedzx/scripts/deploy-container.sh community ./community --data-uid 10002 --secret ADMIN_TOKEN --health http://127.0.0.1:8095/api/health`
 
 ## Known sharp edges
 

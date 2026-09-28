@@ -1,4 +1,5 @@
 import { SITE_URL } from '../site.config.mjs';
+import type { SwatchName } from './lib/palette';
 
 /**
  * Single source of truth for site identity and the world map.
@@ -20,7 +21,7 @@ export const SITE = {
    */
   tagline: 'Notes to my future self',
   description:
-    'I work in IT. This is where I write things down as I learn them — what broke, what I fixed, and what I still do not understand.',
+    'I work in IT. Notes on tech, markets and how the world fits together — written down as I learn, one piece at a time.',
   // CHANGE ME before your first deploy.
   author: 'Zhen Xiang',
   url: SITE_URL,
@@ -30,6 +31,90 @@ export const SITE = {
 
 /** og:locale wants underscores, not hyphens. */
 export const OG_LOCALE = SITE.locale.replace('-', '_');
+
+/* ==========================================================================
+ * TOPICS — what the site is about, and the regions of the puzzle.
+ *
+ * THE list. TOPICS (lookup) and TOPIC_IDS (for the schema) are DERIVED from
+ * it, for the same reason ZONE_LIST exists: a hand-kept second list is how a
+ * post once linked to a page that was never generated.
+ *
+ * Order is the order of the legend and of the regions' seeds on the board.
+ * Colour is meaning here, not decoration: every post takes its topic's
+ * swatch, on the board, in the list, on its own page and on its OG card.
+ *
+ * NOT zones. ZONE_LIST below belongs to the parked 3D world and stays closed.
+ * ======================================================================== */
+export interface Topic {
+  id: string;
+  /** English label. Short: it sits on a chip. */
+  label: string;
+  /** Chinese label, shown beside the English one. */
+  zh: string;
+  /** Palette swatch. Each topic owns one; see src/lib/palette.ts. */
+  swatch: SwatchName;
+  /** Icon drawn on the topic's filled pieces. See src/components/Glyph.astro. */
+  glyph: 'code' | 'spark' | 'candle' | 'gear' | 'globe';
+  /** One line for the topic page's meta description. 40–160 characters. */
+  blurb: string;
+}
+
+export const TOPIC_LIST = [
+  {
+    id: 'it',
+    label: 'IT',
+    zh: '技术',
+    swatch: 'lilac',
+    glyph: 'code',
+    blurb: 'Notes on software and systems — what broke, what I fixed, and what I still do not understand.',
+  },
+  {
+    id: 'thinking',
+    label: 'Thinking',
+    zh: '思维',
+    swatch: 'blush',
+    glyph: 'spark',
+    blurb: 'Notes on how I think, decide and change my mind. Mostly mistakes, written down so I make them once.',
+  },
+  {
+    id: 'markets',
+    label: 'Markets',
+    zh: '市场观察',
+    swatch: 'mint',
+    glyph: 'candle',
+    blurb: 'What I notice in markets as I learn to read them. Observations, not advice — I am still learning too.',
+  },
+  {
+    id: 'world',
+    label: 'How things work',
+    zh: '世界运作逻辑',
+    swatch: 'cyan',
+    glyph: 'gear',
+    blurb: 'How everyday things actually work underneath — payments, cables, queues and the systems in between.',
+  },
+  {
+    id: 'macro',
+    label: 'Business & macro',
+    zh: '商业·经济·宏观',
+    swatch: 'amber',
+    glyph: 'globe',
+    blurb: 'Business, economics and the big picture, from someone trying to understand it one piece at a time.',
+  },
+] as const satisfies readonly Topic[];
+
+export type TopicId = (typeof TOPIC_LIST)[number]['id'];
+
+/** Non-empty tuple, so `z.enum()` keeps the literal union. */
+export const TOPIC_IDS = TOPIC_LIST.map((t) => t.id) as unknown as readonly [
+  TopicId,
+  ...TopicId[],
+];
+
+const topicMap = {} as Record<TopicId, Topic>;
+for (const topic of TOPIC_LIST) topicMap[topic.id] = topic;
+
+/** Lookup. Derived — never hand-maintained. */
+export const TOPICS: Record<TopicId, Topic> = topicMap;
 
 export interface Zone {
   id: string;

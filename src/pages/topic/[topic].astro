@@ -1,0 +1,33 @@
+---
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostList from '../../components/PostList.astro';
+import TopicChip from '../../components/TopicChip.astro';
+import { TOPIC_LIST, TOPICS, type TopicId } from '../../consts';
+import { swatchStyle } from '../../lib/palette';
+import { postsByTopic } from '../../lib/posts';
+
+/** One page per topic, every topic, even before it has a post. */
+export const getStaticPaths = (() =>
+  TOPIC_LIST.map((t) => ({ params: { topic: t.id } }))) satisfies GetStaticPaths;
+
+const id = Astro.params.topic as TopicId;
+const topic = TOPICS[id];
+const posts = (await postsByTopic())[id];
+---
+
+<BaseLayout title={`${topic.label} · ${topic.zh}`} description={topic.blurb} wide>
+  <header class="topic-head" style={swatchStyle(topic.swatch)}>
+    <hr class="topic-band" aria-hidden="true" />
+    <h1 class="topic-title">
+      {topic.label} <span class="topic-zh" lang="zh">{topic.zh}</span>
+    </h1>
+    <p class="topic-count"><span class="tabular">{posts.length}</span> {posts.length === 1 ? 'piece' : 'pieces'}</p>
+  </header>
+
+  <PostList posts={posts} headingLevel={2} hideTopic emptyState="No pieces here yet. The first one is on its way." />
+
+  <ul class="legend legend-row" aria-label="Other topics">
+    {TOPIC_LIST.filter((t) => t.id !== id).map((t) => <li><TopicChip topic={t} /></li>)}
+  </ul>
+</BaseLayout>

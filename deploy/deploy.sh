@@ -24,6 +24,7 @@ cd "$(dirname "$0")/.."
 echo "==> build"
 npm run build
 npm run palette
+npm run puzzle
 npm run framing
 npm run budget
 

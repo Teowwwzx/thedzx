@@ -1,0 +1,78 @@
+---
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { QUOTE_FORM_URL } from '../../site.config.mjs';
+import { swatchStyle } from '../lib/palette';
+import { allIdeas, topicOf } from '../lib/posts';
+
+/**
+ * Ideas I would build, with a starting price. Served at /ideas/.
+ *
+ * A dynamic route with a single path, on purpose: getStaticPaths returns that
+ * path only when there is at least one idea to show. In production that means
+ * real ideas only (see allIdeas), so until the first one exists the page is
+ * simply not generated and the nav hides its link — never an empty shop.
+ */
+export const getStaticPaths = (async () =>
+  (await allIdeas()).length ? [{ params: { ideas: 'ideas' } }] : []) satisfies GetStaticPaths;
+
+const ideas = await allIdeas();
+
+const money = (n: number, c: string) =>
+  new Intl.NumberFormat('en', { style: 'currency', currency: c, maximumFractionDigits: 0 }).format(n);
+
+const quoteUrl = (title: string) => {
+  if (!QUOTE_FORM_URL) return null;
+  const u = new URL(QUOTE_FORM_URL);
+  u.searchParams.set('project', title);
+  return u.toString();
+};
+
+const STATUS: Record<string, string> = { open: 'Open', building: 'Building', built: 'Built' };
+---
+
+<BaseLayout
+  title="Ideas"
+  description="Small things I would like to build. If one fits what you need, we can build it together — prices start from here."
+  noindex={ideas.every((i) => i.data.placeholder)}
+  wide
+>
+  <header class="ideas-head">
+    <h1 class="ideas-title">Ideas</h1>
+    <p class="ideas-lede">Things I would like to build but have not had time for. If one fits what you need, let's build it together.</p>
+  </header>
+
+  {
+    ideas.length === 0 ? (
+      <p class="note">No ideas listed right now.</p>
+    ) : (
+      <ul class="idea-grid">
+        {ideas.map((idea) => {
+          const topic = topicOf(idea);
+          const href = quoteUrl(idea.data.title);
+          return (
+            <li class="idea" style={swatchStyle(topic.swatch)}>
+              <p class="idea-meta">
+                <span class="idea-status">{STATUS[idea.data.status]}</span>
+                <span class="topic-tag">{topic.label}</span>
+                {idea.data.placeholder && <span class="chip ghost">Example</span>}
+              </p>
+              <h2 class="idea-title">{idea.data.title}</h2>
+              <p class="idea-summary">{idea.data.summary}</p>
+              <p class="idea-foot">
+                <span class="idea-price">
+                  from <strong class="tabular">{money(idea.data.price, idea.data.currency)}</strong>
+                </span>
+                {href && idea.data.status !== 'built' && (
+                  <a class="idea-cta" href={href} rel="noopener">
+                    Ask for a quote
+                  </a>
+                )}
+              </p>
+            </li>
+          );
+        })}
+      </ul>
+    )
+  }
+</BaseLayout>

@@ -1,22 +1,27 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 import FormattedDate from '../components/FormattedDate.astro';
+import TopicChip from '../components/TopicChip.astro';
 import { SITE } from '../consts';
-import { swatchFor } from '../lib/palette';
-import type { Post } from '../lib/posts';
+import { swatchStyle } from '../lib/palette';
+import { allPosts, postUrl, topicOf, type Post } from '../lib/posts';
 
 interface Props { post: Post; }
 const { post } = Astro.props;
 const { title, description, pubDate, updatedDate, tags, draft, placeholder } = post.data;
+const topic = topicOf(post);
 
 const url = new URL(`/blog/${post.id}/`, Astro.site).toString();
 
-// The same hue this post has on the index, and on its OG card. Derived from
-// the slug in one place — see src/lib/palette.ts.
-const swatch = swatchFor(post.id);
+/*
+ * Neighbouring pieces in the SAME topic — the puzzle's own sense of "next".
+ * Older and newer, so a reader can walk a region either way.
+ */
+const inTopic = (await allPosts()).filter((p) => p.data.topic === post.data.topic);
+const at = inTopic.findIndex((p) => p.id === post.id);
+const newer = at > 0 ? inTopic[at - 1] : null;
+const older = at >= 0 && at < inTopic.length - 1 ? inTopic[at + 1] : null;
 
-// BlogPosting + BreadcrumbList. The breadcrumb encodes the real spatial
-// hierarchy — site → zone → post — which is also how the 3D world navigates.
 const jsonLd = [
   {
     '@context': 'https://schema.org',
@@ -29,6 +34,7 @@ const jsonLd = [
     publisher: { '@type': 'Person', name: SITE.author, url: SITE.url },
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     url,
+    articleSection: topic.label,
     ...(tags.length ? { keywords: tags.join(', ') } : {}),
     inLanguage: SITE.locale,
   },
@@ -37,7 +43,8 @@ const jsonLd = [
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: SITE.title, item: SITE.url },
-      { '@type': 'ListItem', position: 2, name: title, item: url },
+      { '@type': 'ListItem', position: 2, name: topic.label, item: new URL(`/topic/${topic.id}/`, Astro.site).toString() },
+      { '@type': 'ListItem', position: 3, name: title, item: url },
     ],
   },
 ];
@@ -51,11 +58,7 @@ const jsonLd = [
   jsonLd={placeholder ? [] : jsonLd}
   noindex={placeholder}
 >
-  <article
-    class="prose"
-    style={`--sw: var(--sw-${swatch.name}); --bold: var(--bold-${swatch.name})`}
-  >
-    {/* Decorative: the post's colour, stated once, at full width. */}
+  <article class="prose" style={swatchStyle(topic.swatch)}>
     <hr class="article-band" aria-hidden="true" />
 
     <header style="margin-bottom:36px">
@@ -64,7 +67,8 @@ const jsonLd = [
         {draft && <span class="chip ghost">Draft</span>}
       </p>
       <h1 style="font-size:clamp(29px,5.5vw,40px);margin-bottom:14px">{title}</h1>
-      <p style="color:var(--ink-2);font-size:19px;margin:0">{description}</p>
+      <p style="color:var(--ink-2);font-size:19px;margin:0 0 16px">{description}</p>
+      <TopicChip topic={topic} />
       {
         updatedDate && (
           <p class="label" style="margin-top:14px">
@@ -76,20 +80,69 @@ const jsonLd = [
 
     <slot />
 
-    <footer style="margin-top:56px;padding-top:24px;border-top:1px solid var(--line)">
-
+    <footer class="post-foot">
       {
         tags.length > 0 && (
-          <p style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px">
+          <p class="post-tags">
             {tags.map((t) => (
               <span class="chip swatch">{t}</span>
             ))}
           </p>
         )
       }
-      <p style="margin:0">
-        <a href="/">All posts</a>
-      </p>
     </footer>
   </article>
+
+  {/* The community layer. Hidden until the API answers — see community.ts. */}
+  <section
+    class="post-community community-only measure"
+    data-community-post={post.id}
+    style={swatchStyle(topic.swatch)}
+    aria-labelledby="discuss-title"
+    hidden
+  >
+    <div class="reactions" data-reactions aria-label="Reactions"></div>
+
+    <h2 id="discuss-title" class="discuss-title">
+      Thoughts <span class="discuss-count tabular" data-comment-count></span>
+    </h2>
+    <ul class="comments" data-comments></ul>
+
+    <form class="comment-form" data-comment-form novalidate>
+      <label class="sr-only" for="c-name">Name</label>
+      <input id="c-name" name="name" required maxlength="30" autocomplete="nickname" placeholder="Your name" />
+      <label class="sr-only" for="c-text">Your thoughts</label>
+      <textarea id="c-text" name="text" required maxlength="1000" rows="3" placeholder="What did you think? Questions welcome."></textarea>
+      <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+      <div class="comment-row">
+        <button type="submit">Post</button>
+        <p class="comment-status" data-comment-status role="status"></p>
+      </div>
+    </form>
+  </section>
+
+  <nav class="piece-nav measure" aria-label={`More in ${topic.label}`} style={swatchStyle(topic.swatch)}>
+    {
+      older && (
+        <a class="piece-nav-link" href={postUrl(older)}>
+          <span class="pn-dir">← Earlier piece</span>
+          <span class="pn-title">{older.data.title}</span>
+        </a>
+      )
+    }
+    {
+      newer && (
+        <a class="piece-nav-link is-next" href={postUrl(newer)}>
+          <span class="pn-dir">Next piece →</span>
+          <span class="pn-title">{newer.data.title}</span>
+        </a>
+      )
+    }
+    <a class="piece-nav-home" href="/">Back to the puzzle</a>
+  </nav>
 </BaseLayout>
+
+<script>
+  import { initCommunityPost } from '../scripts/community';
+  initCommunityPost();
+</script>

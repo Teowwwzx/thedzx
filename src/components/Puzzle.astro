@@ -1,0 +1,110 @@
+---
+/**
+ * The homepage puzzle: one region per topic, one piece per post.
+ *
+ * Every piece is a real <a> inside the SVG — a filled piece links to its
+ * post, an empty one to the "ask for a piece" form. So the board is fully
+ * usable with no JavaScript, by keyboard, and by a crawler; the script in
+ * index.astro only adds the preview panel and the region highlight on top.
+ *
+ * Geometry and the fill order come from src/lib/puzzle.ts, which `npm run
+ * puzzle` checks: every post on exactly one piece, every region contiguous,
+ * every region with an empty piece left.
+ */
+import { buildBoard, CELL } from '../lib/puzzle';
+import { TOPIC_LIST, TOPICS, type TopicId } from '../consts';
+import { swatchStyle } from '../lib/palette';
+import { postUrl, type Post } from '../lib/posts';
+import Glyph from './Glyph.astro';
+
+interface Props {
+  posts: Post[];
+}
+const { posts } = Astro.props;
+
+const board = buildBoard(
+  TOPIC_LIST.map((t) => ({ id: t.id })),
+  posts.map((p) => ({ id: p.id, topic: p.data.topic, date: p.data.pubDate })),
+);
+const byId = new Map(posts.map((p) => [p.id, p]));
+
+const filled = board.pieces.filter((p) => p.post).length;
+const pad = 8;
+const GLYPH = 30; // drawn size of the icon, in board units
+---
+
+<figure class="board" data-board>
+  <svg
+    viewBox={`${-pad} ${-pad} ${board.width + pad * 2} ${board.height + pad * 2}`}
+    role="group"
+    aria-label={`The puzzle: ${filled} of ${board.pieces.length} pieces placed`}
+  >
+    <g class="pieces">
+      {
+        board.pieces.map((piece, i) => {
+          const topic = TOPICS[piece.topic as TopicId];
+          const post = piece.post ? byId.get(piece.post)! : null;
+          const style = `${swatchStyle(topic.swatch)}; --i: ${i}`;
+          return post ? (
+            <a
+              class="piece is-filled"
+              href={postUrl(post)}
+              data-topic={topic.id}
+              data-post={post.id}
+              style={style}
+              aria-label={`${post.data.title} — ${topic.label}`}
+            >
+              <path d={piece.d} />
+              <g
+                class="glyph"
+                transform={`translate(${piece.cx - GLYPH / 2} ${piece.cy - GLYPH / 2}) scale(${GLYPH / 24})`}
+                aria-hidden="true"
+              >
+                <Glyph kind={topic.glyph} />
+              </g>
+            </a>
+          ) : (
+            <a
+              class="piece is-empty"
+              href="#join"
+              data-topic={topic.id}
+              data-order={piece.order}
+              style={style}
+              aria-label={`Empty piece in ${topic.label} — not written yet`}
+            >
+              <path d={piece.d} />
+              <text class="plus" x={piece.cx} y={piece.cy} aria-hidden="true">+</text>
+            </a>
+          );
+        })
+      }
+    </g>
+  </svg>
+  <figcaption class="board-count">
+    <span class="tabular">{filled}</span> of <span class="tabular">{board.pieces.length}</span> pieces
+  </figcaption>
+</figure>
+
+{/* The data the preview panel reads. Only what it shows; no body text. */}
+<script
+  is:inline
+  type="application/json"
+  id="puzzle-data"
+  set:html={JSON.stringify({
+    cell: CELL,
+    topics: Object.fromEntries(
+      TOPIC_LIST.map((t) => [t.id, { label: t.label, zh: t.zh, swatch: t.swatch, href: `/topic/${t.id}/` }]),
+    ),
+    posts: Object.fromEntries(
+      posts.map((p) => [
+        p.id,
+        {
+          title: p.data.title,
+          href: postUrl(p),
+          topic: p.data.topic,
+          date: p.data.pubDate.toISOString().slice(0, 10),
+        },
+      ]),
+    ),
+  }).replace(/</g, '\\u003c')}
+/>

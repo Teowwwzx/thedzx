@@ -1,0 +1,48 @@
+---
+/**
+ * A topic's icon, as SVG children in a 24×24 box.
+ *
+ * Emitted INSIDE the puzzle's <svg> (and inside small standalone <svg>s on
+ * chips), so it draws with whatever `stroke` the parent sets. No fills, no
+ * colours of its own: the theme decides, not the icon.
+ */
+import type { Topic } from '../consts';
+
+interface Props {
+  kind: Topic['glyph'];
+}
+const { kind } = Astro.props;
+---
+
+{kind === 'code' && (
+  <>
+    <polyline points="8.5 7 3.5 12 8.5 17" />
+    <polyline points="15.5 7 20.5 12 15.5 17" />
+    <line x1="13.5" y1="5" x2="10.5" y2="19" />
+  </>
+)}
+{kind === 'spark' && (
+  <>
+    <path d="M9 18h6M10.2 21h3.6" />
+    <path d="M12 3a6 6 0 0 0-3.9 10.6c.8.7 1.2 1.6 1.2 2.4h5.4c0-.8.4-1.7 1.2-2.4A6 6 0 0 0 12 3z" />
+  </>
+)}
+{kind === 'candle' && (
+  <>
+    <path d="M7 3.5v17M17 3.5v17" />
+    <rect x="4.8" y="7.5" width="4.4" height="7" rx="0.8" />
+    <rect x="14.8" y="10" width="4.4" height="5.5" rx="0.8" />
+  </>
+)}
+{kind === 'gear' && (
+  <>
+    <circle cx="12" cy="12" r="3.1" />
+    <path d="M12 3.4l1.5 2.3 2.7-.5.5 2.7 2.3 1.5-1.4 2.6 1.4 2.6-2.3 1.5-.5 2.7-2.7-.5L12 20.6l-1.5-2.3-2.7.5-.5-2.7-2.3-1.5 1.4-2.6-1.4-2.6 2.3-1.5.5-2.7 2.7.5z" />
+  </>
+)}
+{kind === 'globe' && (
+  <>
+    <circle cx="12" cy="12" r="8.6" />
+    <path d="M3.4 12h17.2M12 3.4c2.4 2.4 3.6 5.3 3.6 8.6s-1.2 6.2-3.6 8.6c-2.4-2.4-3.6-5.3-3.6-8.6s1.2-6.2 3.6-8.6z" />
+  </>
+)}

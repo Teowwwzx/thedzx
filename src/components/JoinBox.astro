@@ -1,0 +1,41 @@
+---
+/**
+ * How people join. A plain HTML form that POSTs straight to Kit — no script,
+ * no third-party JavaScript on the page, and it works with JS turned off.
+ *
+ * With no KIT_FORM_ID configured it offers RSS instead. A form that submits to
+ * nowhere is worse than no form.
+ */
+import { KIT_FORM_ID } from '../../site.config.mjs';
+---
+
+<section class="join" id="join" aria-labelledby="join-title">
+  <div class="join-inner">
+    <h2 id="join-title" class="join-title">Learn along</h2>
+    <p class="join-lede">New pieces in your inbox, when they land. Nothing else.</p>
+    {
+      KIT_FORM_ID ? (
+        <form
+          class="join-form"
+          action={`https://app.kit.com/forms/${KIT_FORM_ID}/subscriptions`}
+          method="post"
+        >
+          <label class="sr-only" for="join-email">Email</label>
+          <input
+            id="join-email"
+            type="email"
+            name="email_address"
+            required
+            autocomplete="email"
+            placeholder="you@example.com"
+          />
+          <button type="submit">Join</button>
+        </form>
+      ) : (
+        <p class="join-form">
+          <a class="join-rss" href="/rss.xml">Follow with RSS</a>
+        </p>
+      )
+    }
+  </div>
+</section>

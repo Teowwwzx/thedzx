@@ -1,48 +1,31 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostList from '../components/PostList.astro';
-import { SITE } from '../consts';
-import { swatchFor } from '../lib/palette';
-import { allPosts, postUrl } from '../lib/posts';
+import Puzzle from '../components/Puzzle.astro';
+import TopicChip from '../components/TopicChip.astro';
+import AskBox from '../components/AskBox.astro';
+import FormattedDate from '../components/FormattedDate.astro';
+import { SITE, TOPIC_LIST } from '../consts';
+import { swatchStyle } from '../lib/palette';
+import { allPosts, postUrl, postsByTopic, topicOf } from '../lib/posts';
 
 /**
- * The blog.
+ * The homepage is the puzzle.
  *
- * Type does the structural work — one big gesture, a lot of air — and
- * colour does the rest: a field behind the masthead, a band of floating
- * objects under it, and a swatch per post that follows it to its own page.
+ * One region per topic, one piece per post; empty pieces are what has not
+ * been written yet, and readers can ask for one. Words are kept to a minimum
+ * on purpose — the board is the table of contents.
  *
- * The 3D world (a walkable room, a street, a tower) is ON HOLD, not
- * deleted. See LOCATIONS.md. The objects in the hero are new and separate:
- * a band of decoration that happens to be clickable, with no zones, no
- * doors and nothing to enter.
+ * Everything works without JavaScript: pieces are links, the list below is the
+ * same posts as text. The script adds the preview panel, the region highlight
+ * and the community layer (asked-for pieces, the ask form) on top.
+ *
+ * The floating desk objects that used to live here are PARKED in
+ * src/scenery/, the same way the 3D world is parked in src/world/.
  */
 const posts = await allPosts();
-
-/**
- * What the hero objects open, in list order — leftmost object, newest post.
- *
- * Eight because the widest layout has seven slots and one spare; the module
- * takes `links[i]` per slot and ignores the rest, so this number drifting
- * out of step with src/scenery/hero.ts costs a few bytes and nothing else.
- *
- * These are a SHORTCUT. Every one of them is also a real <a href> in the
- * list below, which is what a crawler, a screen reader or a keyboard uses —
- * so the canvas can stay aria-hidden and nothing is lost with it.
- */
-const heroLinks = posts.slice(0, 8).map((post) => ({
-  title: post.data.title,
-  href: postUrl(post),
-  swatch: swatchFor(post.id).name,
-}));
-
-/**
- * JSON.stringify does not escape `<`, so a title containing `</script>`
- * would close this block early and the rest of it would be parsed as HTML.
- * Escaping the angle bracket makes that impossible while leaving the JSON
- * byte-for-byte valid.
- */
-const heroLinksJson = JSON.stringify(heroLinks).replace(/</g, '\\u003c');
+const byTopic = await postsByTopic();
+const latest = posts[0];
 
 const jsonLd = [
   {
@@ -58,75 +41,70 @@ const jsonLd = [
 ---
 
 <BaseLayout title={SITE.title} description={SITE.description} jsonLd={jsonLd} wide>
-  {/*
-    Runs BEFORE the hero below is parsed, which is the whole point: it
-    reserves the object band in the very first layout, so the canvas
-    arriving 300ms later pushes nothing down. The check is a cheap proxy
-    for "this browser can do WebGL" — an actual context probe here would
-    cost a canvas and a GPU handle before first paint. If the real context
-    then fails, the module script below takes the class off again.
-  */}
-  <script is:inline>
-    if (window.WebGL2RenderingContext) document.documentElement.classList.add('stage-ok');
-  </script>
-
-  <section class="hero">
-    <div class="masthead">
+  <section class="home-hero">
+    <div class="hh-intro">
       <p class="tagline-chip">{SITE.tagline}</p>
-      <h1>{SITE.title}</h1>
-      <p class="masthead-lede">{SITE.description}</p>
+      <h1 class="hh-title">{SITE.title}</h1>
+      <p class="hh-lede">{SITE.description}</p>
     </div>
 
-    {/* Duplicates the list below and nothing else, so it is hidden from
-        assistive technology rather than described twice. */}
-    <div class="hero-stage" id="hero-stage" aria-hidden="true"></div>
+    <div class="hh-board">
+      <Puzzle posts={posts} />
+    </div>
+
+    <div class="hh-side">
+      {/* What the pointer is on. Starts on the newest piece, so it is never
+          empty, and it is a real link without JavaScript. */}
+      <aside class="piece-panel" data-panel aria-live="polite">
+        {
+          latest ? (
+            <div style={swatchStyle(topicOf(latest).swatch)}>
+              <p class="pp-kicker">
+                <span class="dot" /> Latest · <FormattedDate date={latest.data.pubDate} />
+              </p>
+              <a class="pp-title" href={postUrl(latest)}>
+                {latest.data.title}
+              </a>
+              <p class="pp-topic">
+                {topicOf(latest).label} · <span lang="zh">{topicOf(latest).zh}</span>
+              </p>
+            </div>
+          ) : (
+            <p class="pp-kicker">The first piece is on its way.</p>
+          )
+        }
+      </aside>
+
+      <ul class="legend" aria-label="Topics">
+        {
+          TOPIC_LIST.map((t) => (
+            <li>
+              <TopicChip topic={t} count={byTopic[t.id].length} />
+            </li>
+          ))
+        }
+      </ul>
+    </div>
   </section>
 
-  {/* Data, not code: the budget gate skips application/json for the same
-      reason it skips ld+json. */}
-  <script is:inline type="application/json" id="hero-links" set:html={heroLinksJson} />
-
-  <section class="reveal">
-    <p class="count-chip">
-      <span class="dot" style="--bold: var(--bold-mint)"></span>
-      {posts.length === 0 ? 'Writing' : `Writing — ${posts.length}`}
-    </p>
-    <PostList posts={posts} headingLevel={2} />
+  <section class="home-latest reveal" aria-labelledby="latest-title">
+    <h2 id="latest-title" class="section-chip">All pieces</h2>
+    <PostList posts={posts} headingLevel={3} compact />
   </section>
+
+  {/* Filled in by the community script; stays hidden if the API is down. */}
+  <section class="asked community-only" aria-labelledby="asked-title" hidden>
+    <h2 id="asked-title" class="section-chip">Asked by readers</h2>
+    <ul class="asked-list" data-asked-list></ul>
+  </section>
+
+  <AskBox />
 </BaseLayout>
 
 <script>
-  /*
-   * The only external script on the site, and it is on this page only.
-   *
-   * Deferred to idle so it never competes with the fonts or the first
-   * paint, and dynamically imported so three.js lands in a chunk of its
-   * own that no other route pulls in.
-   */
-  const host = document.getElementById('hero-stage');
+  import { initBoard } from '../scripts/board';
+  import { initCommunityHome } from '../scripts/community';
 
-  if (host) {
-    const collapse = () => document.documentElement.classList.remove('stage-ok');
-
-    // Parsed here rather than in the module, so the module has no hidden
-    // dependency on an element id and the page owns its own data. A broken
-    // or missing block just means objects with no links — still decoration.
-    let links = [];
-    try {
-      links = JSON.parse(document.getElementById('hero-links')?.textContent || '[]');
-    } catch {
-      /* leave it empty */
-    }
-
-    const go = () => {
-      import('../scenery/hero')
-        .then((m) => {
-          if (!m.mount(host, links)) collapse();
-        })
-        .catch(collapse);
-    };
-
-    if ('requestIdleCallback' in window) requestIdleCallback(go, { timeout: 2500 });
-    else setTimeout(go, 300);
-  }
+  initBoard();
+  initCommunityHome();
 </script>
